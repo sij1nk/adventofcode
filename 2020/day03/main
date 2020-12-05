@@ -1,0 +1,51 @@
+#!/bin/sh
+# AoC 2020 day 03
+
+[ "$1" = -h ] && echo 'Usage: main [12] [FILE]' && exit
+part="${1:-1}"
+input="${2:-input.txt}"
+
+cols=$(expr $(head -n 1 input.txt | wc -m) - 1)
+
+case "$part" in
+	1) answer=$(
+		awk '
+			func chkline(line, i) {
+				ch=substr(line,i,1)
+				if(ch == "#") return 1
+				return 0
+			}
+			BEGIN {col31=-2}
+			{
+				col31=((col31+2)%'$cols')+1
+				trs31+=chkline($1, col31)
+			}
+			END {print trs31}' "$input")
+
+		;;
+	2) answer=$(
+		awk '
+			func chkline(line, i) {
+				ch=substr(line,i,1)
+				if(ch == "#") return 1
+				return 0
+			}
+			BEGIN {col11=0; col31=-2; col51=-4; col71=-6; col12=0}
+			{
+				col11=(col11%'$cols')+1
+				col31=((col31+2)%'$cols')+1
+				col51=((col51+4)%'$cols')+1
+				col71=((col71+6)%'$cols')+1
+				trs11+=chkline($1, col11)
+				trs31+=chkline($1, col31)
+				trs51+=chkline($1, col51)
+				trs71+=chkline($1, col71)
+			}
+			NR % 2 == 1 {
+				col12=(col12%'$cols')+1
+				trs12+=chkline($1, col12)
+			}
+			END {print trs11*trs31*trs51*trs71*trs12}' "$input")
+esac
+
+echo "The answer for part $part is: $answer"
