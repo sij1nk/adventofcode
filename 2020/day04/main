@@ -1,7 +1,7 @@
 #!/bin/sh
 # AoC 2020 day 04
 
-[ "$1" = -h ] && echo 'Usage: main FILE [12]' && exit
+[ "$1" = -h ] && echo 'Usage: main [12] [FILE]' && exit
 part="${1:-1}"
 input="${2:-input.txt}"
 
