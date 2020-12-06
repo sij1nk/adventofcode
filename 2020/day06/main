@@ -1,0 +1,27 @@
+#!/bin/sh
+# AoC 2020 day 06
+
+[ "$1" = -h ] && echo 'Usage: main [12] [FILE]' && exit
+part="${1:-1}"
+input="${2:-input.txt}"
+
+case "$part" in
+	1) answer=$(sed -zE 's/([a-z])\n/\1/g' "$input" |
+	       sed -E ':a;s/(([a-z]).*)\2/\1/;ta' |
+		   awk -v FS="" '{sum+=NF} END{print sum}')
+	   ;;
+    2) answer=$(sed -zE 's/\n{2}/X/g;s/\n/1/g;s/X/1\n/g' "$input" |
+			awk '{
+				printf(gsub(/1/,"") "")
+			    split($1,a,"")
+				n=asort(a)
+				for(i=1;i<=n;i++) printf(a[i]==a[i-1]?a[i]:" "a[i])
+				printf("\n")
+				}' |
+			awk '{
+			    for(i=2;i<=NF;i++) if(length($i)==$1) sum++
+				}
+				END{print sum}')
+esac
+
+echo "The answer for part ${part} is: $answer"
