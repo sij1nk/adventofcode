@@ -1,9 +1,7 @@
 #!/bin/sh
 # AoC 2020 day 05
 
-[ "$1" = -h ] && echo 'Usage: main [12] [FILE]' && exit
-part="${1:-1}"
-input="${2:-input.txt}"
+input="${1:-input.txt}"
 
 lines=$(sed -E "s/([BF])([LR])/\1 \2/g;s/F/0/g;s/B/1/g;s/R/1/g;s/L/0/g" "$input" |
 	awk 'func btod(b) {
@@ -20,10 +18,5 @@ lines=$(sed -E "s/([BF])([LR])/\1 \2/g;s/F/0/g;s/B/1/g;s/R/1/g;s/L/0/g" "$input"
 	{print btod($1)*8+btod($2)}' |
 		sort -n)
 
-case "$part" in
-	1) answer="$(echo "$lines" | tail -n 1)"
-		;;
-	2) answer="$(echo "$lines" | awk '$1==prev+2 {print prev+1} {prev=$1}')"
-esac
-
-echo "The answer for part ${part} is: $answer"
+echo "$lines" | tail -n 1
+echo "$lines" | awk '$1==prev+2 {print prev+1} {prev=$1}'
