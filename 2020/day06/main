@@ -9,7 +9,7 @@ sed -zE 's/([a-z])\n/\1/g' "$input" |
 
 sed -zE 's/\n{2}/X/g;s/\n/1/g;s/X/1\n/g' "$input" |
 	awk '{
-		printf(gsub(/1/,"") "")
+		printf(gsub(/1/,""))
 		split($1,a,"")
 		n=asort(a)
 		for(i=1;i<=n;i++) printf(a[i]==a[i-1]?a[i]:" "a[i])
