@@ -1,0 +1,8 @@
+#!/bin/sh
+# AoC 2020 day 07
+
+input=${1:-input.txt}
+
+sed -E 's/contain/,/g;s/(bag|bags|\.| |no other)//g;s/([a-z]) ([a-z])/\1\2/g;s/([0-9]+)/\1*/g' "$input" > input_transformed.txt
+
+node index.js
