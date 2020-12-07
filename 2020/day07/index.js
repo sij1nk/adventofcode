@@ -10,56 +10,35 @@ fs.readFileSync("input_transformed.txt", "utf-8")
 		}
 	});
 
-// Part 1
-const get_keys = (values) => {
-	let keys = [];
-	for (let key of Object.keys(dict)) {
-		for (let value of values) {
-			if (dict[key].filter((v) => v.match(value)).length) {
-				keys.push(key);
+const containers_of = (bags) => {
+	let containers = [];
+
+	for (let container of Object.keys(dict)) {
+		for (let bag of bags) {
+			if (dict[container].filter((v) => v.match(bag)).length) {
+				containers.push(container);
+				containers = containers.concat(containers_of([container]));
 			}
 		}
 	}
-	return keys;
+
+	return containers.filter((c, i, s) => s.indexOf(c) === i);
 };
 
-const part1 = () => {
-	let values = ["shinygold"];
-	let keys;
-	let allKeys = [];
-
-	do {
-		keys = get_keys(values);
-		for (key of keys) {
-			!allKeys.includes(key) && allKeys.push(key);
-		}
-
-		values = keys;
-	} while (keys.length);
-
-	console.log(allKeys.length);
-};
-part1();
-
-// Part 2
-const get_count = (keys) => {
-	let count = 1;
+const cost_of = (keys) => {
+	let cost = 1;
 
 	for (k of keys) {
 		[n, key] = k.split("*");
 		if (Object.keys(dict).includes(key)) {
-			count += Number(n) * get_count(dict[key]);
+			cost += Number(n) * cost_of(dict[key]);
 		} else {
-			count += Number(n);
+			cost += Number(n);
 		}
 	}
 
-	return count;
+	return cost;
 };
 
-const part2 = () => {
-	let keys = ["1*shinygold"];
-
-	console.log(get_count(keys) - 2);
-};
-part2();
+console.log(containers_of(["shinygold"]).length);
+console.log(cost_of(["1*shinygold"]) - 2);
