@@ -5,20 +5,39 @@ input=${1:-input.txt}
 
 cat "$input" | awk '
 func interpret_line(op, arg) {
-	if(op ~ "acc"){ acc += arg; cur+=1 }
-		else if(op ~ "jmp"){ cur+=arg }
-		else if(op ~ "nop"){ cur+=1 }
+	if(op ~ "acc") { acc += arg; cur+=1 }
+	else if(op ~ "jmp") { cur+=arg }
+	else if(op ~ "nop") { cur+=1 }
 }
 {
 	a[NR] = $1 FS $2 FS NR
 }
 END {
-	cur = 1
-		while(!visited[cur]) {
+	swapprev = 0
+	swapnext = 1
+	temp = ""
+	while(cur < NR) {
+		cur = 1
+		acc = 0
+		while(!visited[cur] && cur < NR) {
 			split(a[cur], _args)
 			visited[_args[3]]++
 			interpret_line(_args[1], _args[2])
 		}
+	if(swapprev != 0) {
+		split(a[swapprev], _sp)
+		a[swapprev] = temp FS _sp[2] FS _sp[3]
+	} else {
+		print acc
+	}
+	do {
+		split(a[swapnext++], _sn)
+	} while(_sn[1] ~ "acc")
+	temp = _sn[1]
+	swapprev = swapnext - 1
+	a[swapprev] = (_sn[1] ~ "jmp" ? "nop" : "jmp") FS _sn[2] FS _sn[3]
+	delete visited
+	}
 	print acc
 }
 '
