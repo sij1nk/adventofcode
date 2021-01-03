@@ -1,5 +1,5 @@
 main :-
-	open('input_transformed.txt', read, Stream),
+	open('day01_transformed.txt', read, Stream),
 	read(Stream, Lines),
 	part1(Lines), part2(Lines), halt.
 

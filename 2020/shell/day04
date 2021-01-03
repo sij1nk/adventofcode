@@ -1,7 +1,7 @@
 #!/bin/sh
 # AoC 2020 day 04
 
-input="${1:-input.txt}"
+input="${1:-../day04.txt}"
 
 lines=$(sed -zr "s/\n{2}/X/g;s/\n/ /g;s/X/\n/g" "$input")
 

@@ -1,7 +1,7 @@
 :- use_module(library(lists), [findall/3, length/2, nth1/3]).
 
 main :-
-	open('input_transformed.txt', read, Stream),
+	open('day02_transformed.txt', read, Stream),
 	read(Stream, Pws),
 	part1(Pws), part2(Pws), halt.
 

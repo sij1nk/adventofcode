@@ -1,8 +1,0 @@
-#!/bin/sh
-# AoC 2020 day 01
-
-input=${1:-input.txt}
-
-sed -z 's/\n/, /g;s/^/\[/;s/, $/\]\./' "$input" > input_transformed.txt
-
-sicstus --nologo -l main.pl --goal main.

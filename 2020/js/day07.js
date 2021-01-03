@@ -1,7 +1,7 @@
 const fs = require("fs");
 
 const dict = {};
-fs.readFileSync("input_transformed.txt", "utf-8")
+fs.readFileSync("day07_transformed.txt", "utf-8")
 	.split("\n")
 	.forEach((line) => {
 		const fields = line.split(",");

@@ -1,0 +1,8 @@
+#!/bin/sh
+# AoC 2020 day 02
+
+input=${1:-../day02.txt}
+
+sed -E 's/:/,/g;s/([0-9]) /\1, /g;s/\n/, /g;s/^/\[/;s/$/\], /' "$input" | sed -zE 's/\n//g;s/^/\[/;s/, $/\]\./' > day02_transformed.txt
+
+sicstus --nologo -l day02.pl --goal main.

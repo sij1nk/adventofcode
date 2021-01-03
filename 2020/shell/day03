@@ -1,9 +1,9 @@
 #!/bin/sh
 # AoC 2020 day 03
 
-input="${1:-input.txt}"
+input="${1:-../day03.txt}"
 
-cols=$(expr $(head -n 1 input.txt | wc -m) - 1)
+cols=$(expr $(head -n 1 $input | wc -m) - 1)
 
 awk '
 	func chkline(line, i) {

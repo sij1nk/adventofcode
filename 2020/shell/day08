@@ -1,7 +1,7 @@
 #!/bin/sh
 # AoC 2020 day 08
 
-input=${1:-input.txt}
+input=${1:-../day08.txt}
 
 cat "$input" | awk '
 func interpret_line(op, arg) {
