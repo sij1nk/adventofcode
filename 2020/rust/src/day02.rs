@@ -43,8 +43,8 @@ impl<'a> Password<'a> {
     }
 }
 
-fn main() {
-    let plain_text = fs::read_to_string("input.txt").unwrap();
+pub fn main() {
+    let plain_text = fs::read_to_string("../../day02.txt").unwrap();
     let passwords: Vec<Password> = plain_text
         .split('\n')
         .filter(|s| !s.is_empty())

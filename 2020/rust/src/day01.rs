@@ -1,8 +1,5 @@
-use std::fs;
-
-fn partition_around(numbers: &Vec<i32>, middle: i32) -> (Vec<i32>, Vec<i32>) {
-    numbers.iter().partition(|&n| n < &middle)
-}
+use super::util;
+use std::error::Error;
 
 fn try_for_sum((low_nums, high_nums): (Vec<i32>, Vec<i32>), sum: i32) -> Option<(i32, i32)> {
     for low_num in low_nums {
@@ -22,35 +19,44 @@ fn try_for_sum((low_nums, high_nums): (Vec<i32>, Vec<i32>), sum: i32) -> Option<
 }
 
 fn find_product(numbers: &Vec<i32>, sum: i32) -> Option<i32> {
-    let (low_nums, high_nums) = partition_around(numbers, sum / 2);
+    let (low_nums, high_nums) = numbers.into_iter().partition(|&&n| n < sum / 2);
     try_for_sum((low_nums, high_nums), sum).map(|(low_nums, high_nums)| low_nums * high_nums)
 }
 
-fn main() {
-    let plain_text = fs::read_to_string("input.txt").unwrap();
-    let mut numbers: Vec<i32> = plain_text
-        .split('\n')
-        .filter(|s| !s.is_empty())
-        .map(|s| s.parse().unwrap())
-        .collect();
-    numbers.sort();
+pub fn part1<'a, I, S>(lines: I) -> Result<Option<i32>, Box<dyn Error + Send + Sync>>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let mut nums = util::parse_many(lines)?;
+    nums.sort();
+    Ok(find_product(&nums, 2020))
+}
 
-    // Part 1
-    match find_product(&numbers, 2020) {
-        Some(product) => println!("{}", product),
-        None => println!("Sum not found"),
-    }
-
-    // Part 2
-    for number in numbers.iter() {
-        let new_numbers = &mut numbers.clone();
-        new_numbers.retain(|&n| n != 2020);
-        match find_product(&new_numbers, 2020 - number) {
-            Some(product) => {
-                println!("{}", product * number);
-                break;
-            }
-            None => (),
+pub fn part2<'a, I, S>(lines: I) -> Result<Option<i32>, Box<dyn Error + Send + Sync>>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let mut nums: Vec<i32> = util::parse_many(lines)?;
+    nums.sort();
+    for num in nums.iter() {
+        if let Some(value) = find_product(&nums, 2020 - num) {
+            return Ok(Some(num * value));
         }
     }
+    Ok(None)
 }
+
+// Part 2
+// for number in numbers.iter() {
+//     let new_numbers = &mut numbers.clone();
+//     new_numbers.retain(|&n| n != 2020);
+//     match find_product(&new_numbers, 2020 - number) {
+//         Some(product) => {
+//             println!("{}", product * number);
+//             break;
+//         }
+//         None => (),
+//     }
+// }
