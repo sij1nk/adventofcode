@@ -17,12 +17,13 @@ fn main() -> io::Result<()> {
         .filter_map(|path| {
             let name = path.file_name()?.to_str()?;
             if !name.starts_with("day") || !name.ends_with(".txt") {
-                return None;
+                None
+            } else {
+                Some((
+                    name[3..name.len() - 4].parse::<u32>().ok()?,
+                    path.to_owned(),
+                ))
             }
-            Some((
-                name[3..name.len() - 4].parse::<u32>().ok()?,
-                path.to_owned(),
-            ))
         }),
     );
 

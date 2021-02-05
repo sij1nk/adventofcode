@@ -16,8 +16,8 @@ fn main() -> io::Result<()> {
         println!(
             "{:?}",
             day01::part1(DAY1)
-                .map_err(util::to_ioerror)?
-                .ok_or_else(|| util::to_ioerror(util::Error))?
+                .map_err(util::to_ioerror)? // Unpack Result
+                .ok_or_else(|| util::to_ioerror(util::Error))? // Unpack Option
         );
         println!(
             "{:?}",
@@ -25,6 +25,12 @@ fn main() -> io::Result<()> {
                 .map_err(util::to_ioerror)?
                 .ok_or_else(|| util::to_ioerror(util::Error))?
         );
+    }
+
+    if args.is_empty() || args.contains("2") {
+        println!("Day 02");
+        println!("{:?}", day02::part1(DAY2));
+        println!("{:?}", day02::part2(DAY2));
     }
 
     Ok(())

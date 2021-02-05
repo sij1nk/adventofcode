@@ -47,16 +47,3 @@ where
     }
     Ok(None)
 }
-
-// Part 2
-// for number in numbers.iter() {
-//     let new_numbers = &mut numbers.clone();
-//     new_numbers.retain(|&n| n != 2020);
-//     match find_product(&new_numbers, 2020 - number) {
-//         Some(product) => {
-//             println!("{}", product * number);
-//             break;
-//         }
-//         None => (),
-//     }
-// }

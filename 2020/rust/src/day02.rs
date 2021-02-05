@@ -1,82 +1,76 @@
-use std::fs;
+use std::error::Error;
 
-struct ValidationParams {
-    n1: usize,
-    n2: usize,
-    c: char,
-}
-
+#[derive(Debug)]
 struct Password<'a> {
-    password: &'a str,
-    params: ValidationParams,
+    num1: usize,
+    num2: usize,
+    c: char,
+    pw: &'a str,
 }
 
-impl<'a> Password<'a> {
-    fn new(n1: usize, n2: usize, c: char, password: &str) -> Password {
-        Password {
-            password,
-            params: ValidationParams { n1, n2, c },
-        }
-    }
-
-    fn validate_bounds(&self) -> bool {
-        let occurences = self
-            .password
-            .chars()
-            .filter(|&c| c == self.params.c)
-            .count() as usize;
-
-        self.params.n1 <= occurences && occurences <= self.params.n2
-    }
-
-    fn validate_positions(&self) -> bool {
-        // Probably disgusting
-        let c1 = self.password[self.params.n1 - 1..self.params.n1]
-            .chars()
-            .next()
-            .unwrap_or(' ');
-        let c2 = self.password[self.params.n2 - 1..self.params.n2]
-            .chars()
-            .next()
-            .unwrap_or(' ');
-        (c1 == self.params.c) ^ (c2 == self.params.c)
-    }
-}
-
-pub fn main() {
-    let plain_text = fs::read_to_string("../../day02.txt").unwrap();
-    let passwords: Vec<Password> = plain_text
-        .split('\n')
-        .filter(|s| !s.is_empty())
-        .filter_map(|s| {
-            let tokens: Vec<&str> = s.split(' ').collect();
-
-            if let [numbers, character, password] = &tokens[..] {
-                let numbers: Vec<usize> = numbers
+fn parse_passwords<'a, I, S>(lines: I) -> Vec<Password<'a>>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    lines
+        .into_iter()
+        .filter_map(|l| {
+            let tokens: Vec<&str> = l.as_ref().split(' ').collect();
+            if let [nums, c, pw] = &tokens[..] {
+                let nums = nums
                     .split('-')
-                    .map(|s| s.parse::<usize>().unwrap())
-                    .collect();
-                let character = character.chars().next().unwrap();
+                    .map(|s| s.parse::<usize>())
+                    .collect::<Result<Vec<usize>, _>>()
+                    .ok()?;
+                let c = c.chars().next()?;
 
-                Some(Password::new(numbers[0], numbers[1], character, password))
-            } else {
-                None
+                return Some(Password {
+                    num1: nums[0],
+                    num2: nums[1],
+                    c,
+                    pw,
+                });
             }
+
+            None
         })
-        .collect();
+        .collect()
+}
 
-    // Part 1
-    println!(
-        "{}",
-        passwords.iter().filter(|pw| pw.validate_bounds()).count()
-    );
+pub fn part1<'a, I, S>(lines: I) -> usize
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let passwords = parse_passwords(lines);
+    passwords
+        .into_iter()
+        .filter_map(|p| {
+            let n = p.pw.chars().filter(|&c| c == p.c).count();
+            if n < p.num1 || n > p.num2 {
+                return None;
+            }
+            Some(p)
+        })
+        .count()
+}
 
-    // Part 2
-    println!(
-        "{}",
-        passwords
-            .iter()
-            .filter(|pw| pw.validate_positions())
-            .count()
-    );
+pub fn part2<'a, I, S>(lines: I) -> usize
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let passwords = parse_passwords(lines);
+    passwords
+        .into_iter()
+        .filter_map(|p| {
+            let chars: Vec<char> = p.pw.chars().collect();
+            if (chars[p.num1 - 1] == p.c) != (chars[p.num2 - 1] == p.c) {
+                return Some(p);
+            }
+
+            None
+        })
+        .count()
 }
