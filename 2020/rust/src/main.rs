@@ -4,7 +4,7 @@ use std::env;
 use std::error::Error;
 use std::io;
 
-use aoc2020::{day01, day02, util};
+use aoc2020::{day01, day02, day03, util};
 
 build_const!("aoc2020");
 
@@ -31,6 +31,12 @@ fn main() -> io::Result<()> {
         println!("Day 02");
         println!("{:?}", day02::part1(DAY2));
         println!("{:?}", day02::part2(DAY2));
+    }
+
+    if args.is_empty() || args.contains("3") {
+        println!("Day 03");
+        println!("{:?}", day03::part1(DAY3));
+        println!("{:?}", day03::part2(DAY3));
     }
 
     Ok(())

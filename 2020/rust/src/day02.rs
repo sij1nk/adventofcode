@@ -1,5 +1,3 @@
-use std::error::Error;
-
 #[derive(Debug)]
 struct Password<'a> {
     num1: usize,
