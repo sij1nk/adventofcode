@@ -18,3 +18,10 @@ regex = "1"
 
 [build-dependencies]
 build_const = "0.2.1"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "criterion"
+harness = false

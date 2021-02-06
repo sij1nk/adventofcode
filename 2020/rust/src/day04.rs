@@ -11,7 +11,7 @@ where
         if line == "" {
             passports.push("".into());
         } else {
-            if let Some(mut last) = passports.last_mut() {
+            if let Some(last) = passports.last_mut() {
                 last.push_str(line);
                 last.push_str(" ");
             }

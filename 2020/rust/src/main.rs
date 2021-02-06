@@ -1,7 +1,6 @@
 use build_const::build_const;
 use std::collections::HashSet;
 use std::env;
-use std::error::Error;
 use std::io;
 
 use aoc2020::{day01, day02, day03, day04, util};
