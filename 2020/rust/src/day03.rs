@@ -5,13 +5,12 @@ where
 {
     let mut count = 0;
     let mut pos = 0;
-    let line_width = 31;
     for line in lines.into_iter().step_by(down) {
         let chars: Vec<char> = line.as_ref().chars().collect();
         if chars[pos] == '#' {
             count += 1;
         }
-        pos = (pos + right) % line_width;
+        pos = (pos + right) % chars.len();
     }
 
     count
@@ -35,4 +34,35 @@ where
         * count_trees(lines.clone(), 5, 1)
         * count_trees(lines.clone(), 7, 1)
         * count_trees(lines.clone(), 1, 2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static EXAMPLE: &[&str] = &[
+        "..##.......",
+        "#...#...#..",
+        ".#....#..#.",
+        "..#.#...#.#",
+        ".#...##..#.",
+        "..#.##.....",
+        ".#.#.#....#",
+        ".#........#",
+        "#.##...#...",
+        "#...##....#",
+        ".#..#...#.#",
+    ];
+
+    #[test]
+    fn part1_test() {
+        let count = part1(EXAMPLE);
+        assert_eq!(count, 7);
+    }
+
+    #[test]
+    fn part2_test() {
+        let count = part2(EXAMPLE);
+        assert_eq!(count, 336);
+    }
 }

@@ -47,3 +47,22 @@ where
     }
     Ok(None)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static EXAMPLE: &[&str] = &["1721", "979", "366", "299", "675", "1456"];
+
+    #[test]
+    fn part1_test() {
+        let result = part1(EXAMPLE).unwrap().unwrap();
+        assert_eq!(result, 514579);
+    }
+
+    #[test]
+    fn part2_test() {
+        let result = part2(EXAMPLE).unwrap().unwrap();
+        assert_eq!(result, 241861950);
+    }
+}

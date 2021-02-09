@@ -54,3 +54,16 @@ where
 
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static EXAMPLE: &[&str] = &["FBFBBFFRLR", "BFFFBBFRRR", "FFFBBBFRRR", "BBFFBBFRLL"];
+
+    #[test]
+    fn parse_test() {
+        let results = parse_seats(EXAMPLE);
+        assert_eq!(results, [357, 567, 119, 820]);
+    }
+}
