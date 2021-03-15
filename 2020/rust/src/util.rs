@@ -3,7 +3,6 @@ use std::fmt;
 use std::io;
 use std::str::FromStr;
 
-// Not going to pretend I know what's going on here
 #[derive(Clone, Debug)]
 pub struct Error;
 
