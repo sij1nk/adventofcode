@@ -107,14 +107,14 @@ mod tests {
 
     #[test]
     fn part1_test() {
-        let result = part1(EXAMPLE);
+        let result = part1(EXAMPLE).unwrap();
 
         assert_eq!(result, 5);
     }
 
     #[test]
     fn part2_test() {
-        let result = part2(EXAMPLE);
+        let result = part2(EXAMPLE).unwrap();
 
         assert_eq!(result, 8);
     }
