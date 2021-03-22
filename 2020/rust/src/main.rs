@@ -4,7 +4,8 @@ use std::env;
 use std::io;
 
 use aoc2020::{
-    day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13, util
+    day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13,
+    day14, util,
 };
 
 build_const!("aoc2020");
@@ -115,6 +116,18 @@ fn main() -> io::Result<()> {
         println!(
             "{:?}",
             day13::part2(DAY13).ok_or_else(|| util::to_ioerror(util::Error))?
+        );
+    }
+
+    if args.is_empty() || args.contains("14") {
+        println!("Day 14");
+        println!(
+            "{:?}",
+            day14::part1(DAY14).ok_or_else(|| util::to_ioerror(util::Error))?
+        );
+        println!(
+            "{:?}",
+            day14::part2(DAY14).ok_or_else(|| util::to_ioerror(util::Error))?
         );
     }
 
