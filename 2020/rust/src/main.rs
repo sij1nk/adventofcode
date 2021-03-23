@@ -5,7 +5,7 @@ use std::io;
 
 use aoc2020::{
     day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13,
-    day14, day15, day16, util,
+    day14, day15, day16, /*%IMPORT%*/ util,
 };
 
 build_const!("aoc2020");
@@ -145,6 +145,8 @@ fn main() -> io::Result<()> {
             day16::part2(DAY16).ok_or_else(|| util::to_ioerror(util::Error))?
         );
     }
+
+    /*%CALL%*/
 
     Ok(())
 }
