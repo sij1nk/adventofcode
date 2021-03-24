@@ -40,15 +40,18 @@ where
         valid_ranges.push((new_bot, new_top));
     }
 
+    println!("{:?}", valid_ranges);
+
     let mut iter = iter.skip(4);
 
     while let Some(line) = iter.next() {
         for num in line.split(',').filter_map(|n| n.parse::<u16>().ok()) {
-            for &(bot, top) in valid_ranges.iter() {
-                if num < bot || num > top {
-                    sum += num;
-                    break;
-                }
+            if !valid_ranges
+                .iter()
+                .any(|&(bot, top)| num >= bot && num <= top)
+            {
+                sum += num;
+                break;
             }
         }
     }
