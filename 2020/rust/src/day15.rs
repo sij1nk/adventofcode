@@ -10,6 +10,7 @@ where
     for line in lines.into_iter() {
         let line = line.as_ref();
         let chars: Vec<_> = line.split(',').collect();
+        println!("{:?}", chars);
         for n in chars.iter().take(chars.len() - 1) {
             let n = n.parse::<u32>().unwrap();
             last_seen[n as usize] = t;
@@ -17,6 +18,9 @@ where
         }
         last = chars[chars.len() - 1].parse::<u32>().unwrap();
     }
+
+    println!("{:?}", last_seen);
+    println!("{}", last);
 
     loop {
         if t == goal {
@@ -55,7 +59,7 @@ where
 mod tests {
     use super::*;
 
-    static EXAMPLE: &[&str] = &["0", "3", "6"];
+    static EXAMPLE: &[&str] = &["0,3,6"];
 
     #[test]
     fn part1_test() {
