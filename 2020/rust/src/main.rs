@@ -5,7 +5,7 @@ use std::io;
 
 use aoc2020::{
     day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13,
-    day14, day15, day16, day17, /*%IMPORT%*/ util,
+    day14, day15, day16, day17, day18, /*%IMPORT%*/ util,
 };
 
 build_const!("aoc2020");
@@ -155,6 +155,17 @@ fn main() -> io::Result<()> {
         println!(
             "{:?}",
             day17::part2(DAY17).ok_or_else(|| util::to_ioerror(util::Error))?
+        );
+    }
+    if args.is_empty() || args.contains("18") {
+        println!("Day 18");
+        println!(
+            "{:?}",
+            day18::part1(DAY18).ok_or_else(|| util::to_ioerror(util::Error))?
+        );
+        println!(
+            "{:?}",
+            day18::part2(DAY18).ok_or_else(|| util::to_ioerror(util::Error))?
         );
     }
     /*%CALL%*/
