@@ -1,0 +1,28 @@
+[package]
+name = "aoc2021"
+version = "0.1.0"
+authors = ["anguaive <angurg98@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "aoc2021"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aoc2021"
+path = "src/main.rs"
+
+[dependencies]
+itertools = "0.10.0"
+build_const = "0.2.1"
+regex = "1"
+
+[build-dependencies]
+build_const = "0.2.1"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "criterion"
+harness = false
