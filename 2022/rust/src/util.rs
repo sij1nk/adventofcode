@@ -4,11 +4,27 @@ use std::io;
 use std::str::FromStr;
 
 #[derive(Clone, Debug)]
-pub struct Error;
+pub struct Error {
+    description: Option<String>
+}
+
+impl Error {
+    pub fn empty() -> Self {
+        Self { description: None }
+    }
+
+    pub fn new(s: &str) -> Self {
+        Self { description: Some(s.into()) }
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error")
+        if let Some(description) = &self.description {
+            write!(f, "{description}")
+        } else {
+            write!(f, "error")
+        }
     }
 }
 
