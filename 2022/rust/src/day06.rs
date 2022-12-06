@@ -30,7 +30,7 @@ where
     S: AsRef<str> + 'a,
 {
     let line = lines.into_iter().map(|l| l.as_ref()).next().unwrap();
-    let mut buffer: VecDeque<char> = VecDeque::with_capacity(4);
+    let mut buffer: VecDeque<char> = VecDeque::with_capacity(14);
 
     for (i, c) in line.chars().enumerate() {
         if buffer.len() < 14 {
