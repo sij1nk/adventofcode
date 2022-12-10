@@ -19,6 +19,8 @@ fn aoc2022_bench(c: &mut Criterion) {
     c.bench_function("day 5 part 2", |b| b.iter(|| day05::part2(black_box(DAY5))));
     c.bench_function("day 6 part 1", |b| b.iter(|| day06::part1(black_box(DAY6))));
     c.bench_function("day 6 part 2", |b| b.iter(|| day06::part2(black_box(DAY6))));
+    c.bench_function("day 7 part 1", |b| b.iter(|| day07::part1(black_box(DAY7))));
+    c.bench_function("day 7 part 2", |b| b.iter(|| day07::part2(black_box(DAY7))));
 }
 
 criterion_group!(aoc2022, aoc2022_bench);

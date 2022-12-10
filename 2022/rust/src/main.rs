@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::env;
 use std::io;
 
-use aoc2022::{day01, day02, day03, day04, day05, day06, util};
+use aoc2022::{day01, day02, day03, day04, day05, day06, day07, util};
 
 build_const!("aoc2022");
 
@@ -52,5 +52,10 @@ fn main() -> io::Result<()> {
         println!("{:?}", day06::part2(DAY6).ok_or_else(|| util::to_ioerror(util::Error::empty()))?);
     }
 
+    if args.is_empty() || args.contains("7") {
+        println!("Day 07");
+        println!("{:?}", day07::part1(DAY7).map_err(util::to_ioerror));
+        println!("{:?}", day07::part2(DAY7).map_err(util::to_ioerror));
+    }
     Ok(())
 }
