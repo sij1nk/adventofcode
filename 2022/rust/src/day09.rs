@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, cell::RefCell};
 
 #[derive(Debug, Copy, Clone)]
 enum VDir {
@@ -88,34 +88,47 @@ impl Point {
     }
 }
 
-struct State {
-    head: Point,
-    tail: Point,
-    touched: HashSet<Point>
+struct Rope {
+    knots: Vec<Point>,
+    tail_touched: HashSet<Point>
 }
 
-impl State {
-    pub fn new() -> Self {
-        let mut touched = HashSet::new();
+impl Rope {
+    pub fn new(length: usize) -> Self {
+        let mut tail_touched = HashSet::new();
         let start = Point::new(0, 0);
-        touched.insert(start);
 
-        Self { head: start, tail: start, touched }
+        let knots = vec![start; length];
+        tail_touched.insert(start);
+
+        Self { knots, tail_touched }
     }
 
     pub fn mov(&mut self, dir: Direction, length: i32) {
         for _ in 0..length {
-            self.head.mov(dir);
-            let (d, dir) = self.tail.d(&self.head);
-            if d > 1 {
-                self.tail.mov(dir);
-                self.touched.insert(self.tail);
+            let head = &mut self.knots[0];
+            head.mov(dir);
+
+            let len = self.knots.len();
+
+            for i in 1..len {
+                let cur = self.knots[i];
+                let (d, dir) = cur.d(&self.knots[i - 1]);
+
+                let cur = &mut self.knots[i];
+                if d > 1 {
+                    cur.mov(dir);
+                }
+                
+                if i == len - 1 {
+                    self.tail_touched.insert(*cur);
+                }
             }
         }
     }
 
     pub fn number_of_tiles_touched(&self) -> usize {
-        self.touched.len()
+        self.tail_touched.len()
     }
 }
 
@@ -124,7 +137,7 @@ where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    let mut state = State::new();
+    let mut state = Rope::new(2);
 
     for line in lines.into_iter().map(|l| l.as_ref()) {
         let (dir, length) = line.split_once(' ').unwrap();
@@ -137,12 +150,22 @@ where
     Some(state.number_of_tiles_touched())
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> Option<u32>
+pub fn part2<'a, I, S>(lines: I) -> Option<usize>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let mut state = Rope::new(10);
+
+    for line in lines.into_iter().map(|l| l.as_ref()) {
+        let (dir, length) = line.split_once(' ').unwrap();
+        let dir = Direction::from_char(dir.chars().next().unwrap()).unwrap();
+        let length = length.parse::<i32>().unwrap();
+
+        state.mov(dir, length);
+    }
+
+    Some(state.number_of_tiles_touched())
 }
 
 #[cfg(test)]
@@ -161,7 +184,8 @@ mod tests {
     #[test]
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
+        println!("{}", result);
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 1);
     }
 }
