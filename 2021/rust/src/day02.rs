@@ -5,7 +5,11 @@ where
 {
     let mut depth: u32 = 0;
     let mut position: u32 = 0;
-    for line in lines.into_iter().map(|line| line.as_ref()) {
+    for line in lines
+        .into_iter()
+        .map(|line| line.as_ref())
+        .filter(|line| !line.is_empty())
+    {
         let mut split = line.split(' ');
         let command = split.next().unwrap();
         let amount = split.next().unwrap().parse::<u32>().unwrap();
@@ -13,14 +17,14 @@ where
         match command {
             "forward" => {
                 position += amount;
-            },
+            }
             "down" => {
                 depth += amount;
-            },
+            }
             "up" => {
                 depth -= amount;
-            },
-            _ => unreachable!()
+            }
+            _ => unreachable!(),
         }
     }
 
@@ -35,7 +39,11 @@ where
     let mut aim: u32 = 0;
     let mut depth: u32 = 0;
     let mut position: u32 = 0;
-    for line in lines.into_iter().map(|line| line.as_ref()) {
+    for line in lines
+        .into_iter()
+        .map(|line| line.as_ref())
+        .filter(|line| !line.is_empty())
+    {
         let mut split = line.split(' ');
         let command = split.next().unwrap();
         let amount = split.next().unwrap().parse::<u32>().unwrap();
@@ -44,14 +52,14 @@ where
             "forward" => {
                 position += amount;
                 depth += amount * aim;
-            },
+            }
             "down" => {
                 aim += amount;
-            },
+            }
             "up" => {
                 aim -= amount;
-            },
-            _ => unreachable!()
+            }
+            _ => unreachable!(),
         }
     }
 
