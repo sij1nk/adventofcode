@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{cmp::Ordering, collections::{HashMap, BTreeMap}};
 
 use itertools::Itertools;
 
@@ -8,7 +8,7 @@ where
     S: AsRef<str> + 'a,
 {
     let mut line_count = 0;
-    let mut one_bits: HashMap<u32, u32> = HashMap::new();
+    let mut one_bits: BTreeMap<u32, u32> = BTreeMap::new();
     for line in lines.into_iter().map(|line| line.as_ref()) {
         line_count += 1;
 
