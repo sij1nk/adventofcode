@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::env;
 use std::io;
 
-use aoc2021::{day01, day02, /*%IMPORT%*/ util};
+use aoc2021::{day01, day02, day03, /*%IMPORT%*/ util};
 
 build_const!("aoc2021");
 
@@ -31,6 +31,18 @@ fn main() -> io::Result<()> {
         println!(
             "{:?}",
             day02::part2(DAY2).ok_or_else(|| util::to_ioerror(util::Error))?
+        );
+    }
+
+    if args.is_empty() || args.contains("3") {
+        println!("Day 03");
+        println!(
+            "{:?}",
+            day03::part1(DAY3).ok_or_else(|| util::to_ioerror(util::Error))? // Unpack Option
+        );
+        println!(
+            "{:?}",
+            day03::part2(DAY3).ok_or_else(|| util::to_ioerror(util::Error))?
         );
     }
 
