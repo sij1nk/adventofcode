@@ -74,15 +74,19 @@ fn parse_capture(captures: &Captures, name: &str) -> Result<usize, util::Error> 
 }
 
 fn parse_line(re: &Regex, line: &str) -> Result<MoveCommand, util::Error> {
-    if let Some(cap) = re.captures(line) {
-        let amount = parse_capture(&cap, "amount")?;
-        let from = parse_capture(&cap, "from")?;
-        let to = parse_capture(&cap, "to")?;
+    let Some(cap) = re.captures(line) else {
+        return Err(util::Error::new("Regex found no captures"));
+    };
 
-        Ok(MoveCommand { amount, from: from - 1, to: to - 1})
-    } else {
-        Err(util::Error::new("Regex found no captures"))
-    }
+    let amount = parse_capture(&cap, "amount")?;
+    let from = parse_capture(&cap, "from")?;
+    let to = parse_capture(&cap, "to")?;
+
+    Ok(MoveCommand {
+        amount,
+        from: from - 1,
+        to: to - 1,
+    })
 }
 
 pub fn part1<'a, I, S>(lines: I) -> Result<String, util::Error>
