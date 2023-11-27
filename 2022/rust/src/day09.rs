@@ -1,21 +1,21 @@
-use std::{collections::HashSet, cell::RefCell};
+use std::collections::HashSet;
 
 #[derive(Debug, Copy, Clone)]
 enum VDir {
     Up,
-    Down
+    Down,
 }
 
 #[derive(Debug, Copy, Clone)]
 enum HDir {
-    Left, 
-    Right
+    Left,
+    Right,
 }
 
 #[derive(Debug, Copy, Clone)]
 struct Direction {
     v: Option<VDir>,
-    h: Option<HDir>
+    h: Option<HDir>,
 }
 
 impl Direction {
@@ -29,7 +29,7 @@ impl Direction {
             'D' => Some(Self::new(Some(VDir::Down), None)),
             'L' => Some(Self::new(None, Some(HDir::Left))),
             'R' => Some(Self::new(None, Some(HDir::Right))),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -37,7 +37,7 @@ impl Direction {
 #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 struct Point {
     x: i32,
-    y: i32
+    y: i32,
 }
 
 impl Point {
@@ -49,13 +49,13 @@ impl Point {
         if let Some(vdir) = dir.v {
             match vdir {
                 VDir::Up => self.y -= 1,
-                VDir::Down => self.y += 1
+                VDir::Down => self.y += 1,
             }
         }
         if let Some(hdir) = dir.h {
             match hdir {
                 HDir::Left => self.x -= 1,
-                HDir::Right => self.x += 1
+                HDir::Right => self.x += 1,
             }
         }
     }
@@ -75,11 +75,19 @@ impl Point {
         }
 
         if dx != 0 {
-            hdir = if dx < 0 { Some(HDir::Right) } else { Some(HDir::Left) };
+            hdir = if dx < 0 {
+                Some(HDir::Right)
+            } else {
+                Some(HDir::Left)
+            };
         };
 
         if dy != 0 {
-            vdir = if dy < 0 { Some(VDir::Down) } else { Some(VDir::Up ) };
+            vdir = if dy < 0 {
+                Some(VDir::Down)
+            } else {
+                Some(VDir::Up)
+            };
         };
 
         let dir = Direction::new(vdir, hdir);
@@ -90,7 +98,7 @@ impl Point {
 
 struct Rope {
     knots: Vec<Point>,
-    tail_touched: HashSet<Point>
+    tail_touched: HashSet<Point>,
 }
 
 impl Rope {
@@ -101,7 +109,10 @@ impl Rope {
         let knots = vec![start; length];
         tail_touched.insert(start);
 
-        Self { knots, tail_touched }
+        Self {
+            knots,
+            tail_touched,
+        }
     }
 
     pub fn mov(&mut self, dir: Direction, length: i32) {
@@ -119,7 +130,7 @@ impl Rope {
                 if d > 1 {
                     cur.mov(dir);
                 }
-                
+
                 if i == len - 1 {
                     self.tail_touched.insert(*cur);
                 }

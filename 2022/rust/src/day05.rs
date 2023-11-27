@@ -1,23 +1,26 @@
-use std::{str::Chars, iter::{Skip, StepBy}};
+use std::{
+    iter::{Skip, StepBy},
+    str::Chars,
+};
 
-use regex::{Regex, Captures};
+use regex::{Captures, Regex};
 
 use crate::util;
 
 struct MoveCommand {
     amount: usize,
     from: usize,
-    to: usize
+    to: usize,
 }
 
 enum Part {
     One,
-    Two
+    Two,
 }
 
 #[derive(Debug)]
 pub struct Data {
-    stacks: Vec<Vec<char>>
+    stacks: Vec<Vec<char>>,
 }
 
 impl Data {
@@ -56,17 +59,28 @@ impl Data {
         let to = self.stacks.get_mut(cmd.to).unwrap();
         match part {
             Part::One => to.extend(drain.iter().rev()),
-            Part::Two => to.extend(drain.iter())
+            Part::Two => to.extend(drain.iter()),
         };
     }
 
     fn get_tops(&self) -> String {
-        self.stacks.iter().map(|c| c.iter().collect::<String>().trim().chars().last().unwrap_or(' ')).collect::<String>()
+        self.stacks
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .collect::<String>()
+                    .trim()
+                    .chars()
+                    .last()
+                    .unwrap_or(' ')
+            })
+            .collect::<String>()
     }
 }
 
 fn parse_capture(captures: &Captures, name: &str) -> Result<usize, util::Error> {
-    captures.name(name)
+    captures
+        .name(name)
         .ok_or_else(|| util::Error::new(&format!("Regex could not capture '{name}'")))?
         .as_str()
         .parse::<usize>()
@@ -154,7 +168,7 @@ mod tests {
         "move 1 from 2 to 1",
         "move 3 from 1 to 3",
         "move 2 from 2 to 1",
-        "move 1 from 1 to 2"
+        "move 1 from 1 to 2",
     ];
 
     #[test]
