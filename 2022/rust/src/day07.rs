@@ -7,12 +7,16 @@ use crate::util;
 struct Dir {
     name: String,
     absolute_name: String,
-    nodes: Vec<Node>
+    nodes: Vec<Node>,
 }
 
 impl Dir {
     pub fn new(name: &str, absolute_name: String) -> Self {
-        Self { name: name.into(), absolute_name, nodes: vec![] }
+        Self {
+            name: name.into(),
+            absolute_name,
+            nodes: vec![],
+        }
     }
 
     pub fn get_size(&self, cache: &mut HashMap<String, usize>) -> usize {
@@ -25,7 +29,7 @@ impl Dir {
                     // small amount of time, so I gave up
                     let dir_size = dir.get_size(cache);
                     size += dir_size;
-                },
+                }
                 Node::File(file) => {
                     size += file.size;
                 }
@@ -46,20 +50,23 @@ struct File {
 
 impl File {
     fn new(name: &str, size: usize) -> Self {
-        Self { name: name.into(), size }
+        Self {
+            name: name.into(),
+            size,
+        }
     }
 }
 
 enum Node {
     Dir(Dir),
-    File(File)
+    File(File),
 }
 
 impl fmt::Debug for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Node::Dir(dir) => write!(f, "{}", dir.name),
-            Node::File(file) => write!(f, "{}: {}", file.name, file.size)
+            Node::File(file) => write!(f, "{}: {}", file.name, file.size),
         }
     }
 }
@@ -67,12 +74,16 @@ impl fmt::Debug for Node {
 struct Filesystem {
     root: Dir,
     size_cache: Option<HashMap<String, usize>>,
-    cwd: Vec<String>
+    cwd: Vec<String>,
 }
 
 impl Filesystem {
     pub fn new() -> Self {
-        Self { root: Dir::new("/", "/".into()), size_cache: None, cwd: vec!["/".into()] }
+        Self {
+            root: Dir::new("/", "/".into()),
+            size_cache: None,
+            cwd: vec!["/".into()],
+        }
     }
 
     fn get_cwd_string(&self) -> String {
@@ -94,7 +105,12 @@ impl Filesystem {
             self.calculate_size_cache();
         }
 
-        self.size_cache.as_ref().unwrap().values().filter(|&&v| v <= dir_size_limit).sum()
+        self.size_cache
+            .as_ref()
+            .unwrap()
+            .values()
+            .filter(|&&v| v <= dir_size_limit)
+            .sum()
     }
 
     pub fn smallest_dir_size_above_size(&mut self, min_size: usize) -> usize {
@@ -124,9 +140,9 @@ impl Filesystem {
     }
 
     pub fn build<'a, I, S>(lines: I) -> Result<Self, util::Error>
-    where 
+    where
         I: IntoIterator<Item = &'a S>,
-        S: AsRef<str> + 'a
+        S: AsRef<str> + 'a,
     {
         let mut fs = Self::new();
         let mut cwd_string = String::new();
@@ -138,7 +154,7 @@ impl Filesystem {
             match split.next().unwrap() {
                 "$" => {
                     if !current_nodes.is_empty() {
-                        fs.add_nodes(&mut current_nodes)?; 
+                        fs.add_nodes(&mut current_nodes)?;
                         current_nodes.clear();
                     }
 
@@ -146,19 +162,21 @@ impl Filesystem {
                         fs.cd(split.next().unwrap());
                         cwd_string = fs.get_cwd_string();
                     }
-                },
+                }
                 "dir" => {
                     let name = split.next().unwrap();
                     let mut absolute_name = cwd_string.clone();
                     absolute_name.push('/');
                     absolute_name.push_str(name);
                     current_nodes.push(Node::Dir(Dir::new(name, absolute_name)));
-                },
+                }
                 size => {
-                    let size = size.parse::<usize>().map_err(|_| util::Error::new("Could not parse file size"))?;
+                    let size = size
+                        .parse::<usize>()
+                        .map_err(|_| util::Error::new("Could not parse file size"))?;
                     let name = split.next().unwrap();
                     current_nodes.push(Node::File(File::new(name, size)));
-                } 
+                }
             }
         }
 
@@ -171,9 +189,15 @@ impl Filesystem {
 
     pub fn cd(&mut self, dir: &str) {
         match dir {
-            "/" => { self.cwd.truncate(1); },
-            ".." => { self.cwd.pop(); },
-            s => { self.cwd.push(s.into()); }
+            "/" => {
+                self.cwd.truncate(1);
+            }
+            ".." => {
+                self.cwd.pop();
+            }
+            s => {
+                self.cwd.push(s.into());
+            }
         }
     }
 
@@ -181,13 +205,18 @@ impl Filesystem {
         let mut wd = &mut self.root;
 
         for part in self.cwd.iter().skip(1) {
-            wd = wd.nodes.iter_mut().filter_map(|node| {
-                if let Node::Dir(dir) = node {
-                    Some(dir)
-                } else {
-                    None
-                }
-            }).find(|dir| dir.name == *part).unwrap();
+            wd = wd
+                .nodes
+                .iter_mut()
+                .filter_map(|node| {
+                    if let Node::Dir(dir) = node {
+                        Some(dir)
+                    } else {
+                        None
+                    }
+                })
+                .find(|dir| dir.name == *part)
+                .unwrap();
         }
 
         wd.nodes.append(nodes);
@@ -251,7 +280,7 @@ mod tests {
         "8033020 d.log",
         "5626152 d.ext",
         "7214296 k",
-        ];
+    ];
 
     #[test]
     fn part1_test() {
@@ -264,6 +293,6 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 24933642);
     }
 }
