@@ -2,9 +2,9 @@ use build_const::build_const;
 use std::collections::HashSet;
 use std::env;
 
-use aoc2022::day01;
+use aoc2023::day01;
 
-build_const!("aoc2022");
+build_const!("aoc2023");
 
 fn main() -> anyhow::Result<()> {
     let args = env::args().skip(1).collect::<HashSet<String>>();

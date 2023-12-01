@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
         }),
     );
 
-    let mut consts = ConstWriter::for_build("aoc2022")?.finish_dependencies();
+    let mut consts = ConstWriter::for_build("aoc2023")?.finish_dependencies();
     for (day, path) in days {
         let lines = BufReader::new(File::open(path)?)
             .lines()

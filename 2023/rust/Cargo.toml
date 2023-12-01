@@ -1,15 +1,15 @@
 [package]
-name = "aoc2022"
+name = "aoc2023"
 version = "0.1.0"
-authors = ["anguaive <angurg98@gmail.com>"]
-edition = "2018"
+authors = ["github.com/sij1nk"]
+edition = "2021"
 
 [lib]
-name = "aoc2022"
+name = "aoc2023"
 path = "src/lib.rs"
 
 [[bin]]
-name = "aoc2022"
+name = "aoc2023"
 path = "src/main.rs"
 
 [dependencies]
