@@ -1,0 +1,30 @@
+[package]
+name = "aoc2022"
+version = "0.1.0"
+authors = ["anguaive <angurg98@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "aoc2022"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aoc2022"
+path = "src/main.rs"
+
+[dependencies]
+itertools = "0.10.0"
+build_const = "0.2.1"
+regex = "1"
+ascii = "1.1.0"
+anyhow = "1.0.75"
+
+[build-dependencies]
+build_const = "0.2.1"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "criterion"
+harness = false
