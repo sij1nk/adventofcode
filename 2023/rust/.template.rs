@@ -1,4 +1,4 @@
-pub fn part1<'a, I, S>(lines: I) -> Option<u32>
+pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
@@ -6,7 +6,7 @@ where
     todo!()
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> Option<u32>
+pub fn part2<'a, I, S>(_lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
