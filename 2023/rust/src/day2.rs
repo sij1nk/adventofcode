@@ -39,7 +39,9 @@ fn parse_pull(pull_str: &str) -> anyhow::Result<Cubes> {
     let mut pull = Cubes::default();
 
     for cubes in pull_str.split(',').map(|s| s.trim()) {
-        let (amount_str, color) = cubes.split_once(' ').ok_or(anyhow!(""))?;
+        let (amount_str, color) = cubes.split_once(' ').ok_or(anyhow!(
+            "Invalid input line - failed to parse pull amount and color"
+        ))?;
         let amount = amount_str.parse::<u32>()?;
         pull.add_cubes(color, amount)?;
     }
