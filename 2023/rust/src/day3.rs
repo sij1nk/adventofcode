@@ -132,18 +132,14 @@ impl SlidingWindow {
 
 impl SlidingWindow {
     fn add_line(&mut self, line: &str) {
-        self.current_line_index += 1;
+        self.slide_out();
+
         let (mut numbers, mut symbols) = parse_line(self.current_line_index, line);
         self.numbers.append(&mut numbers);
         self.symbols.append(&mut symbols);
         if self.size < self.capacity {
             self.size += 1;
         }
-
-        self.numbers
-            .retain(|n| self.current_line_index - n.y <= self.capacity - 1);
-        self.symbols
-            .retain(|s| self.current_line_index - s.position.y <= self.capacity - 1);
     }
 
     fn slide_out(&mut self) {
@@ -155,43 +151,27 @@ impl SlidingWindow {
             .retain(|s| self.current_line_index - s.position.y <= self.capacity - 1);
     }
 
-    fn process_part1(&mut self) -> u32 {
-        let mut sum = 0;
-
-        self.numbers.retain(|n| {
-            if self.symbols.iter().any(|s| n.is_adjacent_to(s)) {
-                sum += n.value;
-                false
-            } else {
-                true
-            }
-        });
-
-        sum
+    fn process<F>(&mut self, algorithm: F) -> u32
+    where
+        F: Fn(&mut SlidingWindow) -> u32,
+    {
+        algorithm(self)
     }
+}
 
-    fn process_part2(&mut self) -> u32 {
-        let mut sum = 0;
+fn sum_part_numbers(window: &mut SlidingWindow) -> u32 {
+    let mut sum = 0;
 
-        for symbol in self
-            .symbols
-            .iter()
-            .filter(|s| s.position.y == self.current_line_index - 1)
-            .filter(|s| s.value == '*')
-        {
-            let adjacent_number_values: Vec<u32> = self
-                .numbers
-                .iter()
-                .filter(|n| n.is_adjacent_to(&symbol))
-                .map(|n| n.value)
-                .collect();
-            if adjacent_number_values.len() == 2 {
-                sum += adjacent_number_values.iter().product::<u32>();
-            }
+    window.numbers.retain(|n| {
+        if window.symbols.iter().any(|s| n.is_adjacent_to(s)) {
+            sum += n.value;
+            false
+        } else {
+            true
         }
+    });
 
-        sum
-    }
+    sum
 }
 
 pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
@@ -204,10 +184,33 @@ where
 
     for line in lines.into_iter().map(|l| l.as_ref()) {
         window.add_line(line);
-        sum += window.process_part1();
+        sum += window.process(sum_part_numbers)
     }
 
     Ok(sum)
+}
+
+fn sum_gear_ratio(window: &mut SlidingWindow) -> u32 {
+    let mut sum = 0;
+
+    for symbol in window
+        .symbols
+        .iter()
+        .filter(|s| s.position.y == window.current_line_index - 1)
+        .filter(|s| s.value == '*')
+    {
+        let adjacent_number_values: Vec<u32> = window
+            .numbers
+            .iter()
+            .filter(|n| n.is_adjacent_to(&symbol))
+            .map(|n| n.value)
+            .collect();
+        if adjacent_number_values.len() == 2 {
+            sum += adjacent_number_values.iter().product::<u32>();
+        }
+    }
+
+    sum
 }
 
 pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u32>
@@ -223,11 +226,11 @@ where
 
     for line in lines.iter().skip(1) {
         window.add_line(line);
-        sum += window.process_part2();
+        sum += window.process(sum_gear_ratio);
     }
 
     window.slide_out();
-    sum += window.process_part2();
+    sum += window.process(sum_gear_ratio);
 
     Ok(sum)
 }
