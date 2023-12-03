@@ -26,13 +26,12 @@ impl Symbol {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Number {
     value: u32,
     y: u32,
     x_start: u32,
     x_end: u32,
-    checked: bool,
 }
 
 impl Number {
@@ -63,7 +62,6 @@ impl ParsedNumber {
             y: self.digits.first().unwrap().1.y,
             x_start: self.digits.first().unwrap().1.x,
             x_end: self.digits.last().unwrap().1.x,
-            checked: false,
         };
 
         for (index, &(digit, _)) in self.digits.iter().rev().enumerate() {
@@ -75,38 +73,6 @@ impl ParsedNumber {
         self.digits = vec![];
 
         number
-    }
-}
-
-#[derive(Debug, Default)]
-struct Window2 {
-    numbers: Vec<Number>,
-    symbols: Vec<Symbol>,
-    current_line: u32,
-}
-
-impl Window2 {
-    fn add_line(&mut self, y: u32, line: &str) {
-        let (mut numbers, mut symbols) = parse_line(y, line);
-        self.current_line = y;
-        self.numbers.retain(|n| y - n.y <= 1);
-        self.symbols.retain(|s| y - s.position.y <= 1);
-
-        self.numbers.append(&mut numbers);
-        self.symbols.append(&mut symbols);
-    }
-
-    fn process(&mut self) -> u32 {
-        let mut sum = 0;
-
-        for number in self.numbers.iter_mut().filter(|n| !n.checked) {
-            if self.symbols.iter().any(|s| number.is_adjacent_to(s)) {
-                sum += number.value;
-                number.checked = true;
-            }
-        }
-
-        sum
     }
 }
 
@@ -143,18 +109,102 @@ fn parse_line(y: u32, line: &str) -> (Vec<Number>, Vec<Symbol>) {
     (numbers, symbols)
 }
 
+#[derive(Debug)]
+struct SlidingWindow {
+    numbers: Vec<Number>,
+    symbols: Vec<Symbol>,
+    current_line_index: u32,
+    capacity: u32,
+    size: u32,
+}
+
+impl SlidingWindow {
+    fn new(capacity: u32) -> Self {
+        Self {
+            numbers: Vec::with_capacity(32),
+            symbols: Vec::with_capacity(32),
+            current_line_index: 0,
+            capacity,
+            size: 0,
+        }
+    }
+}
+
+impl SlidingWindow {
+    fn add_line(&mut self, line: &str) {
+        self.current_line_index += 1;
+        let (mut numbers, mut symbols) = parse_line(self.current_line_index, line);
+        self.numbers.append(&mut numbers);
+        self.symbols.append(&mut symbols);
+        if self.size < self.capacity {
+            self.size += 1;
+        }
+
+        self.numbers
+            .retain(|n| self.current_line_index - n.y <= self.capacity - 1);
+        self.symbols
+            .retain(|s| self.current_line_index - s.position.y <= self.capacity - 1);
+    }
+
+    fn slide_out(&mut self) {
+        self.current_line_index += 1;
+
+        self.numbers
+            .retain(|n| self.current_line_index - n.y <= self.capacity - 1);
+        self.symbols
+            .retain(|s| self.current_line_index - s.position.y <= self.capacity - 1);
+    }
+
+    fn process_part1(&mut self) -> u32 {
+        let mut sum = 0;
+
+        self.numbers.retain(|n| {
+            if self.symbols.iter().any(|s| n.is_adjacent_to(s)) {
+                sum += n.value;
+                false
+            } else {
+                true
+            }
+        });
+
+        sum
+    }
+
+    fn process_part2(&mut self) -> u32 {
+        let mut sum = 0;
+
+        for symbol in self
+            .symbols
+            .iter()
+            .filter(|s| s.position.y == self.current_line_index - 1)
+            .filter(|s| s.value == '*')
+        {
+            let adjacent_number_values: Vec<u32> = self
+                .numbers
+                .iter()
+                .filter(|n| n.is_adjacent_to(&symbol))
+                .map(|n| n.value)
+                .collect();
+            if adjacent_number_values.len() == 2 {
+                sum += adjacent_number_values.iter().product::<u32>();
+            }
+        }
+
+        sum
+    }
+}
+
 pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
     let mut sum: u32 = 0;
+    let mut window = SlidingWindow::new(2);
 
-    let mut window = Window2::default();
-
-    for (y, line) in lines.into_iter().map(|l| l.as_ref()).enumerate() {
-        window.add_line(y as u32, line);
-        sum += window.process();
+    for line in lines.into_iter().map(|l| l.as_ref()) {
+        window.add_line(line);
+        sum += window.process_part1();
     }
 
     Ok(sum)
@@ -166,25 +216,18 @@ where
     S: AsRef<str> + 'a,
 {
     let mut sum: u32 = 0;
-    let mut numbers: Vec<Number> = Vec::new();
-    let mut symbols: Vec<Symbol> = Vec::new();
+    let mut window = SlidingWindow::new(3);
 
-    for (y, line) in lines.into_iter().map(|l| l.as_ref()).enumerate() {
-        let (mut line_numbers, mut line_symbols) = parse_line(y as u32, line);
-        numbers.append(&mut line_numbers);
-        symbols.append(&mut line_symbols);
+    let lines: Vec<_> = lines.into_iter().map(|l| l.as_ref()).collect();
+    window.add_line(lines.first().unwrap());
+
+    for line in lines.iter().skip(1) {
+        window.add_line(line);
+        sum += window.process_part2();
     }
 
-    for symbol in symbols.into_iter().filter(|s| s.value == '*') {
-        let adjacent_number_values: Vec<u32> = numbers
-            .iter()
-            .filter(|n| n.is_adjacent_to(&symbol))
-            .map(|n| n.value)
-            .collect();
-        if adjacent_number_values.len() == 2 {
-            sum += adjacent_number_values.iter().product::<u32>();
-        }
-    }
+    window.slide_out();
+    sum += window.process_part2();
 
     Ok(sum)
 }
