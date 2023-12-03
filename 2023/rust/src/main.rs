@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::env;
 
 #[rustfmt::skip]
-use aoc2023::{day1, day2, /*%main.rs_import%*/};
+use aoc2023::{day1, day2, day3, /*%main.rs_import%*/};
 
 build_const!("aoc2023");
 
@@ -20,6 +20,11 @@ fn main() -> anyhow::Result<()> {
         println!("Day 2");
         println!("{:?}", day2::part1(DAY2)?);
         println!("{:?}", day2::part2(DAY2)?);
+    }
+    if args.is_empty() || args.contains("3") {
+        println!("Day 3");
+        println!("{:?}", day3::part1(DAY3)?);
+        println!("{:?}", day3::part2(DAY3)?);
     }
     /*%main.rs_call%*/
 
