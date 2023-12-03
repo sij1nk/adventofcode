@@ -1,11 +1,11 @@
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 struct Position {
-    x: usize,
-    y: usize,
+    x: u32,
+    y: u32,
 }
 
 impl Position {
-    fn new(x: usize, y: usize) -> Self {
+    fn new(x: u32, y: u32) -> Self {
         Self { x, y }
     }
 
@@ -29,14 +29,16 @@ impl Symbol {
 #[derive(Debug)]
 struct Number {
     value: u32,
-    positions: Vec<Position>,
+    y: u32,
+    x_start: u32,
+    x_end: u32,
 }
 
 impl Number {
     fn is_adjacent_to(&self, symbol: &Symbol) -> bool {
-        self.positions
-            .iter()
-            .any(|p| p.is_adjacent_to(&symbol.position))
+        self.y.abs_diff(symbol.position.y) <= 1
+            && (self.x_start.checked_sub(1).unwrap_or(0)..=self.x_end + 1)
+                .contains(&symbol.position.x)
     }
 }
 
@@ -57,15 +59,15 @@ impl ParsedNumber {
     fn finalize(&mut self) -> Number {
         let mut number = Number {
             value: 0,
-            positions: Vec::with_capacity(self.digits.len()),
+            y: self.digits.first().unwrap().1.y,
+            x_start: self.digits.first().unwrap().1.x,
+            x_end: self.digits.last().unwrap().1.x,
         };
 
-        self.digits.sort_by(|(_, p1), (_, p2)| p2.x.cmp(&p1.x));
-        for (index, &(digit, position)) in self.digits.iter().enumerate() {
+        for (index, &(digit, _)) in self.digits.iter().rev().enumerate() {
             let index = index as u32;
             let value = digit * u32::pow(10, index);
             number.value += value;
-            number.positions.push(position);
         }
 
         self.digits = vec![];
@@ -86,7 +88,7 @@ where
 
     for (y, line) in lines.into_iter().map(|l| l.as_ref()).enumerate() {
         for (x, char) in line.chars().enumerate().filter(|&c| c.1 != '.') {
-            let position = Position::new(x, y);
+            let position = Position::new(x as u32, y as u32);
 
             if let Some(digit) = char.to_digit(10) {
                 if parsed_number.has_digits() {
