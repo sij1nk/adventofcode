@@ -7,27 +7,29 @@ type CardHits = u32;
 type CardAmount = u32;
 
 fn parse_card(line: &str) -> anyhow::Result<CardHits> {
-    let (_, numbers) = line
+    let (_, remaining) = line
         .split_once(':')
         .ok_or(anyhow!("Invalid input line - could not split by ':'"))?;
-    let (winning_numbers_str, our_numbers_str) = numbers
-        .split_once('|')
-        .ok_or(anyhow!("Invalid input line - could not split by '|'"))?;
-    let winning_numbers: Vec<u32> = winning_numbers_str
-        .split(' ')
-        .filter(|str| !str.is_empty())
-        .map(|n| n.parse::<u32>().unwrap())
-        .collect();
-    let our_numbers: Vec<u32> = our_numbers_str
-        .split(' ')
-        .filter(|str| !str.is_empty())
-        .map(|n| n.parse::<u32>().unwrap())
-        .collect();
 
-    let hits = winning_numbers
-        .iter()
-        .filter(|&n| our_numbers.contains(n))
-        .count() as CardHits;
+    let mut winning_numbers: Vec<u32> = Vec::with_capacity(16);
+    let mut hits = 0;
+    let mut pipe_hit = false;
+
+    for word in remaining.split_whitespace() {
+        if word == "|" {
+            pipe_hit = true;
+            continue;
+        }
+
+        let number = word.parse::<u32>()?;
+        if !pipe_hit {
+            winning_numbers.push(number);
+        } else {
+            if winning_numbers.contains(&number) {
+                hits += 1;
+            }
+        }
+    }
 
     Ok(hits)
 }
