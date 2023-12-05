@@ -37,8 +37,7 @@ struct Number {
 impl Number {
     fn is_adjacent_to(&self, symbol: &Symbol) -> bool {
         self.y.abs_diff(symbol.position.y) <= 1
-            && (self.x_start.checked_sub(1).unwrap_or(0)..=self.x_end + 1)
-                .contains(&symbol.position.x)
+            && (self.x_start.saturating_sub(1)..=self.x_end + 1).contains(&symbol.position.x)
     }
 }
 
@@ -83,13 +82,11 @@ fn parse_line(y: u32, line: &str) -> (Vec<Number>, Vec<Symbol>) {
     let mut parsed_number = ParsedNumber::default();
 
     for (x, char) in line.chars().enumerate().filter(|&c| c.1 != '.') {
-        let position = Position::new(x as u32, y as u32);
+        let position = Position::new(x as u32, y);
 
         if let Some(digit) = char.to_digit(10) {
-            if parsed_number.has_digits() {
-                if !position.is_adjacent_to(&last_position) {
-                    numbers.push(parsed_number.finalize());
-                }
+            if parsed_number.has_digits() && !position.is_adjacent_to(&last_position) {
+                numbers.push(parsed_number.finalize());
             }
             parsed_number.add_digit(digit, position);
         } else {
@@ -146,9 +143,9 @@ impl SlidingWindow {
         self.current_line_index += 1;
 
         self.numbers
-            .retain(|n| self.current_line_index - n.y <= self.capacity - 1);
+            .retain(|n| self.current_line_index - n.y < self.capacity);
         self.symbols
-            .retain(|s| self.current_line_index - s.position.y <= self.capacity - 1);
+            .retain(|s| self.current_line_index - s.position.y < self.capacity);
     }
 
     fn process<F>(&mut self, algorithm: F) -> u32
@@ -202,7 +199,7 @@ fn sum_gear_ratio(window: &mut SlidingWindow) -> u32 {
         let adjacent_number_values: Vec<u32> = window
             .numbers
             .iter()
-            .filter(|n| n.is_adjacent_to(&symbol))
+            .filter(|n| n.is_adjacent_to(symbol))
             .map(|n| n.value)
             .collect();
         if adjacent_number_values.len() == 2 {

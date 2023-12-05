@@ -41,13 +41,11 @@ where
     let Some(mut seeds) = lines
         .next()
         .and_then(|l| l.split_once(':'))
-        .and_then(|(_, numbers)| {
-            Some(
-                numbers
-                    .split_whitespace()
-                    .map(|n| n.parse::<Source>().expect("cannot parse seed"))
-                    .collect::<Vec<_>>(),
-            )
+        .map(|(_, numbers)| {
+            numbers
+                .split_whitespace()
+                .map(|n| n.parse::<Source>().expect("cannot parse seed"))
+                .collect::<Vec<_>>()
         })
     else {
         return Err(anyhow!("Was unable to parse seeds"));

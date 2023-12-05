@@ -24,10 +24,8 @@ fn parse_card(line: &str) -> anyhow::Result<CardHits> {
         let number = word.parse::<u32>()?;
         if !pipe_hit {
             winning_numbers.push(number);
-        } else {
-            if winning_numbers.contains(&number) {
-                hits += 1;
-            }
+        } else if winning_numbers.contains(&number) {
+            hits += 1;
         }
     }
 
