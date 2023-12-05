@@ -2,7 +2,8 @@
 
 Criterion benchmarks were ran on my puzzle inputs, on a Ryzen 5 5600G.
 
-```
+```text
+%BENCH_START%
 test day 1 part 1 ... bench:       26473 ns/iter (+/- 131)
 test day 1 part 2 ... bench:       47534 ns/iter (+/- 178)
 test day 2 part 1 ... bench:       54958 ns/iter (+/- 219)

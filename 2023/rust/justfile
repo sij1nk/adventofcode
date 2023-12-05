@@ -1,0 +1,11 @@
+run *days:
+  cargo run {{days}}
+build:
+  cargo build
+test:
+  cargo test
+bench *args:
+  cargo bench {{args}}
+newday day:
+  ./scripts/setup-day.sh {{day}}
+
