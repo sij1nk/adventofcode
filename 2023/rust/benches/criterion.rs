@@ -2,7 +2,7 @@
 extern crate build_const;
 
 #[rustfmt::skip]
-use aoc2023::{day1, day2, day3, day4, day5, /*%criterion.rs_import%*/};
+use aoc2023::{day1, day2, day3, day4, day5, day6, /*%criterion.rs_import%*/};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 build_const!("aoc2023");
@@ -18,6 +18,8 @@ fn aoc2023_bench(c: &mut Criterion) {
     c.bench_function("day 4 part 2", |b| b.iter(|| day4::part2(black_box(DAY4))));
     c.bench_function("day 5 part 1", |b| b.iter(|| day5::part1(black_box(DAY5))));
     c.bench_function("day 5 part 2", |b| b.iter(|| day5::part2(black_box(DAY5))));
+    c.bench_function("day 6 part 1", |b| b.iter(|| day6::part1(black_box(DAY6))));
+    c.bench_function("day 6 part 2", |b| b.iter(|| day6::part2(black_box(DAY6))));
     /*%criterion.rs_call%*/
 }
 
