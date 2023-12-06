@@ -24,25 +24,18 @@ impl Range {
 
 impl PartialOrd for Range {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        if self.start < other.start {
-            Some(cmp::Ordering::Less)
-        } else if self.start > other.start {
-            Some(cmp::Ordering::Greater)
-        } else {
-            if self.end < other.end {
-                Some(cmp::Ordering::Less)
-            } else if self.end > other.end {
-                Some(cmp::Ordering::Greater)
-            } else {
-                Some(cmp::Ordering::Equal)
-            }
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Range {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        let start_ordering = self.start.cmp(&other.start);
+        if start_ordering == cmp::Ordering::Equal {
+            other.end.cmp(&self.end)
+        } else {
+            start_ordering
+        }
     }
 }
 
@@ -57,8 +50,7 @@ fn simplify_ranges(ranges: &mut [Range]) -> Vec<Range> {
             simplified_ranges.push(r1);
             r2
         } else {
-            let merged_range = Range::new(cmp::min(r1.start, r2.start), cmp::max(r1.end, r2.end));
-            merged_range
+            Range::new(cmp::min(r1.start, r2.start), cmp::max(r1.end, r2.end))
         }
     });
 

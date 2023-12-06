@@ -76,7 +76,7 @@ where
             .1
             .split_whitespace()
             .collect::<String>()
-            .replace(" ", "")
+            .replace(' ', "")
             .parse::<i64>()
             .expect("could not parse number")
     });
