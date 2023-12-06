@@ -1,11 +1,12 @@
-run *days:
-  cargo run {{days}}
-build:
-  cargo build
-test:
-  cargo test
+run *args:
+  cargo run {{args}}
+build *args:
+  cargo build {{args}}
+test *args:
+  cargo test {{args}}
 bench *args:
   cargo bench {{args}}
-newday day:
-  ./scripts/setup-day.sh {{day}}
-
+scaffold day:
+  ./scripts/scaffold-day.sh {{day}}
+write-bench:
+  ./scripts/write-benchmarks-to-readme.sh

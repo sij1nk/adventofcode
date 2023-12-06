@@ -4,12 +4,14 @@ Criterion benchmarks were ran on my puzzle inputs, on a Ryzen 5 5600G.
 
 ```text
 %BENCH_START%
-test day 1 part 1 ... bench:       26473 ns/iter (+/- 131)
-test day 1 part 2 ... bench:       47534 ns/iter (+/- 178)
-test day 2 part 1 ... bench:       54958 ns/iter (+/- 219)
-test day 2 part 2 ... bench:       54164 ns/iter (+/- 326)
-test day 3 part 1 ... bench:       89097 ns/iter (+/- 214)
-test day 3 part 2 ... bench:       90511 ns/iter (+/- 203)
-test day 4 part 1 ... bench:       80685 ns/iter (+/- 83)
-test day 4 part 2 ... bench:       92957 ns/iter (+/- 130)
+test day 1 part 1 ... bench:       26184 ns/iter (+/- 84)
+test day 1 part 2 ... bench:       46170 ns/iter (+/- 108)
+test day 2 part 1 ... bench:       56464 ns/iter (+/- 291)
+test day 2 part 2 ... bench:       54452 ns/iter (+/- 287)
+test day 3 part 1 ... bench:       90160 ns/iter (+/- 245)
+test day 3 part 2 ... bench:       91673 ns/iter (+/- 194)
+test day 4 part 1 ... bench:       73061 ns/iter (+/- 1912)
+test day 4 part 2 ... bench:       84705 ns/iter (+/- 3899)
+test day 5 part 1 ... bench:       25559 ns/iter (+/- 61)
+test day 5 part 2 ... bench:       32626 ns/iter (+/- 53)
 ```
