@@ -7,12 +7,14 @@ enum Step {
     Right,
 }
 
-pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
+type Graph<'a> = HashMap<&'a str, (&'a str, &'a str)>;
+
+fn parse_graph_and_steps<'a, I, S>(lines: I) -> anyhow::Result<(Graph<'a>, Vec<Step>)>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    let mut graph: HashMap<&str, (&str, &str)> = HashMap::new();
+    let mut graph: Graph = HashMap::new();
 
     let mut lines = lines
         .into_iter()
@@ -50,31 +52,74 @@ where
         );
     }
 
-    let mut current = "AAA";
+    Ok((graph, steps))
+}
+
+fn measure_path(
+    graph: &Graph,
+    steps: &Vec<Step>,
+    starting_node: &str,
+    end_condition: impl Fn(&str) -> bool,
+) -> u64 {
+    let mut current_node = starting_node;
     let mut step_count = 0;
 
-    while current != "ZZZ" {
-        let node = &graph[current];
+    while !end_condition(current_node) {
+        let &(left_neighbor, right_neighbor) = &graph[current_node];
         let step_index = step_count % steps.len();
         let step = steps[step_index];
 
-        current = match step {
-            Step::Left => &node.0,
-            Step::Right => &node.1,
+        current_node = match step {
+            Step::Left => left_neighbor,
+            Step::Right => right_neighbor,
         };
 
         step_count += 1;
     }
 
-    Ok(step_count as u32)
+    step_count as u64
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> anyhow::Result<u32>
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    while a != b {
+        if a > b {
+            a = a - b;
+        } else {
+            b = b - a;
+        }
+    }
+    a
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    (a * b) / gcd(a, b)
+}
+
+pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u64>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let (graph, steps) = parse_graph_and_steps(lines)?;
+
+    let step_count = measure_path(&graph, &steps, "AAA", |s| s == "ZZZ");
+    Ok(step_count)
+}
+
+pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u64>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let (graph, steps) = parse_graph_and_steps(lines)?;
+
+    let least_common_multiple = graph
+        .keys()
+        .filter(|s| s.ends_with('A'))
+        .map(|s| measure_path(&graph, &steps, s, |s| s.ends_with('Z')))
+        .fold(1, lcm);
+
+    Ok(least_common_multiple)
 }
 
 #[cfg(test)]
@@ -101,6 +146,19 @@ mod tests {
         "ZZZ = (ZZZ, ZZZ)",
     ];
 
+    static EXAMPLE_PART2: &[&str] = &[
+        "LR",
+        "",
+        "11A = (11B, XXX)",
+        "11B = (XXX, 11Z)",
+        "11Z = (11B, XXX)",
+        "22A = (22B, XXX)",
+        "22B = (22C, 22C)",
+        "22C = (22Z, 22Z)",
+        "22Z = (22B, 22B)",
+        "XXX = (XXX, XXX)",
+    ];
+
     #[test]
     fn part1_test() {
         let result = part1(EXAMPLE).unwrap();
@@ -112,8 +170,14 @@ mod tests {
 
     #[test]
     fn part2_test() {
-        let result = part2(EXAMPLE).unwrap();
+        let result = part2(EXAMPLE_PART2).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn lcm_works() {
+        assert_eq!(lcm(4, 6), 12);
+        assert_eq!(lcm(21, 6), 42);
     }
 }
