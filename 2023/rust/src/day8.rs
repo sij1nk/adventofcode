@@ -30,7 +30,7 @@ where
             'R' => Some(Step::Right),
             unknown => {
                 eprintln!("Encountered unknown step type '{}'", unknown);
-                return None;
+                None
             }
         })
         .collect::<Vec<_>>();
@@ -83,9 +83,9 @@ fn measure_path(
 fn gcd(mut a: u64, mut b: u64) -> u64 {
     while a != b {
         if a > b {
-            a = a - b;
+            a -= b;
         } else {
-            b = b - a;
+            b -= a;
         }
     }
     a
