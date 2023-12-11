@@ -24,4 +24,6 @@ test day  9 part 1 ... bench:       89319 ns/iter (+/- 359)
 test day  9 part 2 ... bench:       89571 ns/iter (+/- 559)
 test day 10 part 1 ... bench:     2294370 ns/iter (+/- 26828)
 test day 10 part 2 ... bench:    60666027 ns/iter (+/- 11108483)
+test day 11 part 1 ... bench:      100131 ns/iter (+/- 169)
+test day 11 part 2 ... bench:      100213 ns/iter (+/- 90)
 ```
