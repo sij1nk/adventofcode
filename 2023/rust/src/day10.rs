@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::BTreeMap, fmt::Display};
 
 use anyhow::anyhow;
 
@@ -10,6 +10,13 @@ enum Direction {
     East,
     Any,
 }
+
+const DIRECTION_PRIORITY: &[Direction] = &[
+    Direction::North,
+    Direction::West,
+    Direction::South,
+    Direction::East,
+];
 
 impl Display for Direction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -38,8 +45,14 @@ impl Direction {
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Tile {
     Pipe(Direction, Direction),
-    Ground,
+    Ground { fake: bool },
     Start,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct GroundProperties {
+    fake: bool,
+    edge: bool,
 }
 
 impl Tile {
@@ -51,7 +64,7 @@ impl Tile {
             'J' => Ok(Tile::Pipe(Direction::North, Direction::West)),
             '7' => Ok(Tile::Pipe(Direction::South, Direction::West)),
             'F' => Ok(Tile::Pipe(Direction::South, Direction::East)),
-            '.' => Ok(Tile::Ground),
+            '.' => Ok(Tile::Ground { fake: false }),
             'S' => Ok(Tile::Start),
             unknown => Err(anyhow!("Found unknown tile type '{}'", unknown)),
         }
@@ -68,7 +81,7 @@ impl Tile {
                     None
                 }
             }
-            Self::Ground => None,
+            Self::Ground { fake: _ } => None,
             Self::Start => Some(Direction::Any),
         }
     }
@@ -77,6 +90,38 @@ impl Tile {
 #[derive(Debug, Default)]
 struct Maze {
     inner: Vec<Vec<Tile>>,
+}
+
+impl Display for Maze {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for row in &self.inner {
+            for tile in row {
+                match *tile {
+                    Tile::Start => write!(f, "S"),
+                    Tile::Pipe(d1, d2) => {
+                        if d1 == Direction::North && d2 == Direction::South {
+                            write!(f, "|")
+                        } else if d1 == Direction::East && d2 == Direction::West {
+                            write!(f, "-")
+                        } else if d1 == Direction::North && d2 == Direction::East {
+                            write!(f, "L")
+                        } else if d1 == Direction::North && d2 == Direction::West {
+                            write!(f, "J")
+                        } else if d1 == Direction::South && d2 == Direction::West {
+                            write!(f, "7")
+                        } else {
+                            write!(f, "F")
+                        }
+                    }
+                    Tile::Ground { fake: false } => write!(f, "."),
+                    Tile::Ground { fake: true } => write!(f, " "),
+                }?;
+            }
+            write!(f, "\n")?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Maze {
@@ -89,9 +134,17 @@ impl Maze {
         let tile = row.get(p.x);
         tile.copied()
     }
+
+    fn get_tile_mut<'a>(&'a mut self, p: Position) -> Option<&'a mut Tile> {
+        self.inner.get_mut(p.y)?.get_mut(p.x)
+    }
+
+    fn is_edge_position(&self, p: Position) -> bool {
+        p.x == 0 || p.y == 0 || p.y == self.inner.len() - 1 || p.x == self.inner[0].len() - 1
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Position {
     x: usize,
     y: usize,
@@ -121,7 +174,7 @@ fn get_next_position(p: Position, facing: Direction) -> Option<Position> {
     Some(next_position)
 }
 
-fn traverse_node(
+fn traverse_tile(
     maze: &Maze,
     current: Position,
     facing: Direction,
@@ -144,31 +197,42 @@ fn traverse_node(
 }
 
 fn traverse_maze_starting_towards(
-    maze: &Maze,
+    maze: &mut Maze,
     start: Position,
-    facing: Direction,
-) -> anyhow::Result<usize> {
-    let (mut current, mut facing) = traverse_node(maze, start, facing)?;
-    let mut steps = 1;
+    start_direction: Direction,
+) -> anyhow::Result<Vec<Position>> {
+    let mut loop_positions = Vec::new();
+    loop_positions.push(start);
+
+    let mut old_facing = Direction::Any;
+    let (mut current, mut facing) = traverse_tile(maze, start, start_direction)?;
+    loop_positions.push(current);
 
     while current != start {
-        (current, facing) = traverse_node(maze, current, facing)?;
-        steps += 1;
+        old_facing = facing;
+        (current, facing) = traverse_tile(maze, current, facing)?;
+        loop_positions.push(current);
     }
 
-    Ok(steps)
+    let Some(start_tile) = maze.get_tile_mut(start) else {
+        return Err(anyhow!("Could not find start tile"));
+    };
+
+    *start_tile = Tile::Pipe(old_facing.opposite(), start_direction);
+
+    Ok(loop_positions)
 }
 
-fn traverse_maze(maze: &Maze, start: Position) -> anyhow::Result<usize> {
+fn traverse_maze(maze: &mut Maze, start: Position) -> anyhow::Result<Vec<Position>> {
     for starting_direction in &[
         Direction::North,
         Direction::West,
         Direction::South,
         Direction::East,
     ] {
-        let path_length = traverse_maze_starting_towards(maze, start, *starting_direction);
-        if path_length.is_ok() {
-            return path_length;
+        let loop_positions = traverse_maze_starting_towards(maze, start, *starting_direction);
+        if loop_positions.is_ok() {
+            return loop_positions;
         } else {
             continue;
         }
@@ -179,7 +243,7 @@ fn traverse_maze(maze: &Maze, start: Position) -> anyhow::Result<usize> {
     ))
 }
 
-pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<usize>
+fn parse_maze<'a, I, S>(lines: I) -> anyhow::Result<(Maze, Position)>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
@@ -208,17 +272,146 @@ where
         return Err(anyhow!("Found no starting positions in input"));
     };
 
-    let loop_length = traverse_maze(&maze, start)?;
-
-    Ok(loop_length / 2)
+    Ok((maze, start))
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> anyhow::Result<u32>
+fn extrapolate_maze(maze: &mut Maze, loop_positions: &mut Vec<Position>) {
+    let mut new_rows = Vec::with_capacity(maze.inner.len() * 2 - 1);
+
+    for (y, row) in maze.inner.iter().enumerate() {
+        let mut new_row = Vec::with_capacity(row.len() * 2 - 1);
+        let mut extrapolated_row = Vec::with_capacity(row.len() * 2 - 1);
+
+        for (x, &tile) in row.iter().enumerate() {
+            let pos = Position { x, y };
+
+            if loop_positions.contains(&pos) {
+                let tile_after = match tile {
+                    Tile::Pipe(d1, d2) if d1 == Direction::East || d2 == Direction::East => {
+                        Tile::Pipe(Direction::East, Direction::West)
+                    }
+                    _ => Tile::Ground { fake: true },
+                };
+
+                let tile_below = match tile {
+                    Tile::Pipe(d1, d2) if d1 == Direction::South || d2 == Direction::South => {
+                        Tile::Pipe(Direction::North, Direction::South)
+                    }
+                    _ => Tile::Ground { fake: true },
+                };
+
+                new_row.push(tile);
+                new_row.push(tile_after);
+                extrapolated_row.push(tile_below);
+            } else {
+                new_row.push(Tile::Ground { fake: false });
+                new_row.push(Tile::Ground { fake: true });
+                extrapolated_row.push(Tile::Ground { fake: true });
+            }
+
+            extrapolated_row.push(Tile::Ground { fake: true });
+        }
+
+        new_rows.push(new_row);
+        new_rows.push(extrapolated_row);
+    }
+
+    let new_maze = Maze { inner: new_rows };
+    *maze = new_maze;
+}
+
+fn collect_ground_positions(maze: &Maze) -> BTreeMap<Position, GroundProperties> {
+    let mut positions = BTreeMap::new();
+
+    for (y, row) in maze.inner.iter().enumerate() {
+        for (x, tile) in row.iter().enumerate() {
+            if let Tile::Ground { fake } = tile {
+                let p = Position { x, y };
+                positions.insert(
+                    p,
+                    GroundProperties {
+                        fake: *fake,
+                        edge: maze.is_edge_position(p),
+                    },
+                );
+            }
+        }
+    }
+
+    positions
+}
+
+// Perform depth-first search on connected ground positions. Return the number checked non-fake
+// ground positions, and whether the group of checked positions touched the maze edge
+fn dfs(
+    pos: Position,
+    positions_to_check: &mut BTreeMap<Position, GroundProperties>,
+) -> (usize, bool) {
+    let Some(GroundProperties { fake, edge }) = positions_to_check.remove(&pos) else {
+        panic!("Start position was not in positions_to_check");
+    };
+    let mut checked = if fake { 0 } else { 1 };
+    let mut touched_edge = edge;
+
+    for &d in DIRECTION_PRIORITY {
+        let Some(next) = get_next_position(pos, d) else {
+            // Position is on the edge of the maze
+            touched_edge = true;
+            continue;
+        };
+
+        if positions_to_check.get(&next).is_none() {
+            // Position does not need to be checked - it's not ground, or it has been checked before
+            continue;
+        }
+
+        let (child_checked, child_touched_edge) = dfs(next, positions_to_check);
+        touched_edge |= child_touched_edge;
+        if touched_edge {
+            checked = 0;
+        } else {
+            checked += child_checked;
+        }
+    }
+
+    (checked, touched_edge)
+}
+
+pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<usize>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let (mut maze, start) = parse_maze(lines)?;
+    let loop_positions = traverse_maze(&mut maze, start)?;
+
+    Ok(loop_positions.len() / 2)
+}
+
+pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<usize>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    let (mut maze, start) = parse_maze(lines)?;
+    let mut loop_positions = traverse_maze(&mut maze, start)?;
+    extrapolate_maze(&mut maze, &mut loop_positions);
+
+    let mut ground_positions = collect_ground_positions(&maze);
+
+    let mut real_ground_tiles_contained_by_loop = 0;
+
+    while !ground_positions.is_empty() {
+        let Some(&ground) = ground_positions.keys().next() else {
+            break;
+        };
+        let (checked_real_tiles, tiles_touched_maze_edge) = dfs(ground, &mut ground_positions);
+        if !tiles_touched_maze_edge {
+            real_ground_tiles_contained_by_loop += checked_real_tiles;
+        }
+    }
+
+    Ok(real_ground_tiles_contained_by_loop)
 }
 
 #[cfg(test)]
@@ -226,6 +419,44 @@ mod tests {
     use super::*;
 
     static EXAMPLE: &[&str] = &["7-F7-", ".FJ|7", "SJLL7", "|F--J", "LJ.LJ"];
+
+    static EXAMPLE_PART2: &[&str] = &[
+        ".F----7F7F7F7F-7....",
+        ".|F--7||||||||FJ....",
+        ".||.FJ||||||||L7....",
+        "FJL7L7LJLJ||LJ.L-7..",
+        "L--J.L7...LJS7F-7L7.",
+        "....F-J..F7FJ|L7L7L7",
+        "....L7.F7||L7|.L7L7|",
+        ".....|FJLJ|FJ|F7|.LJ",
+        "....FJL-7.||.||||...",
+        "....L---J.LJ.LJLJ...",
+    ];
+
+    static EXAMPLE_PART2_2: &[&str] = &[
+        "FF7FSF7F7F7F7F7F---7",
+        "L|LJ||||||||||||F--J",
+        "FL-7LJLJ||||||LJL-77",
+        "F--JF--7||LJLJ7F7FJ-",
+        "L---JF-JLJ.||-FJLJJ7",
+        "|F|F-JF---7F7-L7L|7|",
+        "|FFJF7L7F-JF7|JL---7",
+        "7-L-JL7||F7|L7F-7F7|",
+        "L.L7LFJ|||||FJL7||LJ",
+        "L7JLJL-JLJLJL--JLJ.L",
+    ];
+
+    static EXAMPLE_PART2_3: &[&str] = &[
+        "..........",
+        ".S------7.",
+        ".|F----7|.",
+        ".||....||.",
+        ".||....||.",
+        ".|L-7F-J|.",
+        ".|..||..|.",
+        ".L--JL--J.",
+        "..........",
+    ];
 
     #[test]
     fn part1_test() {
@@ -236,8 +467,16 @@ mod tests {
 
     #[test]
     fn part2_test() {
-        let result = part2(EXAMPLE).unwrap();
+        let result1 = part2(EXAMPLE_PART2).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result1, 8);
+
+        let result2 = part2(EXAMPLE_PART2_2).unwrap();
+
+        assert_eq!(result2, 10);
+
+        let result3 = part2(EXAMPLE_PART2_3).unwrap();
+
+        assert_eq!(result3, 4);
     }
 }

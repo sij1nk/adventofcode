@@ -10,3 +10,5 @@ scaffold day:
   ./scripts/scaffold-day.sh {{day}}
 write-bench:
   ./scripts/write-benchmarks-to-readme.sh
+write-bench-console:
+  cargo bench --bench criterion -- --output-format=bencher -n
