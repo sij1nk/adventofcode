@@ -117,7 +117,7 @@ impl Display for Maze {
                     Tile::Ground { fake: true } => write!(f, " "),
                 }?;
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         Ok(())
@@ -135,7 +135,7 @@ impl Maze {
         tile.copied()
     }
 
-    fn get_tile_mut<'a>(&'a mut self, p: Position) -> Option<&'a mut Tile> {
+    fn get_tile_mut(&mut self, p: Position) -> Option<&mut Tile> {
         self.inner.get_mut(p.y)?.get_mut(p.x)
     }
 
@@ -275,7 +275,7 @@ where
     Ok((maze, start))
 }
 
-fn extrapolate_maze(maze: &mut Maze, loop_positions: &mut Vec<Position>) {
+fn extrapolate_maze(maze: &mut Maze, loop_positions: &mut [Position]) {
     let mut new_rows = Vec::with_capacity(maze.inner.len() * 2 - 1);
 
     for (y, row) in maze.inner.iter().enumerate() {
