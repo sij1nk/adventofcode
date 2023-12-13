@@ -1,40 +1,60 @@
-use std::fmt;
-
 #[derive(Default)]
 struct Map<'a> {
     inner: Vec<&'a str>,
 }
 
-impl<'a> fmt::Debug for Map<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for &row in self.inner.iter() {
-            writeln!(f, "{}", row)?;
-        }
-        Ok(())
-    }
+fn get_differing_chars_in_lines(
+    line1: impl Iterator<Item = char>,
+    line2: impl Iterator<Item = char>,
+) -> u32 {
+    line1
+        .zip(line2)
+        .fold(0, |acc, (c1, c2)| if c1 != c2 { acc + 1 } else { acc })
 }
 
-fn columns_are_mirrored_at(map: &Map, i: usize) -> bool {
+fn columns_are_mirrored_at(map: &Map, i: usize, consider_smudges: bool) -> bool {
     let inner = &map.inner;
     let row_len = inner[0].len();
+    let mut found_smudge = false;
 
     let column_pairs_to_compare = i.min(row_len - i - 2);
 
     for dist in 0..column_pairs_to_compare {
-        let column = inner.iter().map(|&row| row.chars().nth(i - (dist + 1)));
-        let next_column = inner.iter().map(|&row| row.chars().nth(i + 1 + dist + 1));
+        let column = inner
+            .iter()
+            .filter_map(|&row| row.chars().nth(i - (dist + 1)));
+        let next_column = inner
+            .iter()
+            .filter_map(|&row| row.chars().nth(i + 1 + dist + 1));
 
-        if !column.zip(next_column).all(|(c1, c2)| c1 == c2) {
+        let diffs = get_differing_chars_in_lines(column, next_column);
+
+        if consider_smudges {
+            if diffs == 1 {
+                if !found_smudge {
+                    found_smudge = true;
+                } else {
+                    return false;
+                }
+            } else if diffs != 0 {
+                return false;
+            }
+        } else if diffs != 0 {
             return false;
         }
     }
 
-    true
+    if consider_smudges {
+        found_smudge
+    } else {
+        true
+    }
 }
 
-fn rows_are_mirrored_at(map: &Map, i: usize) -> bool {
+fn rows_are_mirrored_at(map: &Map, i: usize, consider_smudges: bool) -> bool {
     let inner = &map.inner;
     let column_len = inner.len();
+    let mut found_smudge = false;
 
     let row_pairs_to_compare = i.min(column_len - i - 2);
 
@@ -42,21 +62,42 @@ fn rows_are_mirrored_at(map: &Map, i: usize) -> bool {
         let row = inner[i - (dist + 1)];
         let next_row = inner[i + 1 + dist + 1];
 
-        if row != next_row {
+        let diffs = get_differing_chars_in_lines(row.chars(), next_row.chars());
+
+        if consider_smudges {
+            if diffs == 1 {
+                if !found_smudge {
+                    found_smudge = true;
+                } else {
+                    return false;
+                }
+            } else if diffs != 0 {
+                return false;
+            }
+        } else if diffs != 0 {
             return false;
         }
     }
 
-    true
+    if consider_smudges {
+        found_smudge
+    } else {
+        true
+    }
 }
 
-fn solve_by_rows(map: &Map) -> Option<u32> {
+fn solve_by_rows(map: &Map, consider_smudges: bool) -> Option<u32> {
     let inner = &map.inner;
 
     for (i, (row, next_row)) in inner.iter().zip(inner.iter().skip(1)).enumerate() {
-        let maybe_mirror = row == next_row;
-
-        if maybe_mirror && rows_are_mirrored_at(map, i) {
+        let diffs = get_differing_chars_in_lines(row.chars(), next_row.chars());
+        if consider_smudges {
+            if (diffs == 0 && rows_are_mirrored_at(map, i, true))
+                || (diffs == 1 && rows_are_mirrored_at(map, i, false))
+            {
+                return Some(i as u32 + 1);
+            }
+        } else if diffs == 0 && rows_are_mirrored_at(map, i, false) {
             return Some(i as u32 + 1);
         }
     }
@@ -64,18 +105,24 @@ fn solve_by_rows(map: &Map) -> Option<u32> {
     None
 }
 
-fn solve_by_columns(map: &Map) -> Option<u32> {
+fn solve_by_columns(map: &Map, consider_smudges: bool) -> Option<u32> {
     let inner = &map.inner;
     let row_len = inner[0].len();
 
     let mut i = 0;
 
     while i + 1 < row_len {
-        let column = inner.iter().map(|&row| row.chars().nth(i));
-        let next_column = inner.iter().map(|&row| row.chars().nth(i + 1));
+        let column = inner.iter().filter_map(|&row| row.chars().nth(i));
+        let next_column = inner.iter().filter_map(|&row| row.chars().nth(i + 1));
+        let diffs = get_differing_chars_in_lines(column, next_column);
 
-        let maybe_mirror = column.zip(next_column).all(|(c1, c2)| c1 == c2);
-        if maybe_mirror && columns_are_mirrored_at(map, i) {
+        if consider_smudges {
+            if (diffs == 0 && columns_are_mirrored_at(map, i, true))
+                || (diffs == 1 && columns_are_mirrored_at(map, i, false))
+            {
+                return Some(i as u32 + 1);
+            }
+        } else if diffs == 0 && columns_are_mirrored_at(map, i, false) {
             return Some(i as u32 + 1);
         }
 
@@ -85,9 +132,9 @@ fn solve_by_columns(map: &Map) -> Option<u32> {
     None
 }
 
-fn solve(map: &Map) -> anyhow::Result<u32> {
-    let column_score = solve_by_columns(map).unwrap_or_default();
-    let row_score = solve_by_rows(map).unwrap_or_default();
+fn solve(map: &Map, consider_smudges: bool) -> anyhow::Result<u32> {
+    let column_score = solve_by_columns(map, consider_smudges).unwrap_or_default();
+    let row_score = solve_by_rows(map, consider_smudges).unwrap_or_default();
 
     Ok(column_score + 100 * row_score)
 }
@@ -102,7 +149,7 @@ where
 
     for line in lines.into_iter().map(|l| l.as_ref()) {
         if line.is_empty() {
-            sum += solve(&map)?;
+            sum += solve(&map, false)?;
             map.inner.clear();
         } else {
             map.inner.push(line);
@@ -110,17 +157,32 @@ where
     }
 
     // Input doesn't have a blank line at the end
-    sum += solve(&map)?;
+    sum += solve(&map, false)?;
 
     Ok(sum)
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> anyhow::Result<u32>
+pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let mut sum = 0;
+    let mut map = Map::default();
+
+    for line in lines.into_iter().map(|l| l.as_ref()) {
+        if line.is_empty() {
+            sum += solve(&map, true)?;
+            map.inner.clear();
+        } else {
+            map.inner.push(line);
+        }
+    }
+
+    // Input doesn't have a blank line at the end
+    sum += solve(&map, true)?;
+
+    Ok(sum)
 }
 
 #[cfg(test)]
@@ -172,6 +234,6 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 400);
     }
 }
