@@ -1,7 +1,7 @@
 use anyhow::anyhow;
-use std::fmt;
+use std::{fmt, hash::Hash};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 enum Tile {
     Round,
     Cube,
@@ -29,9 +29,29 @@ impl fmt::Debug for Tile {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Hash)]
 struct Map {
     inner: Vec<Vec<Tile>>,
+}
+
+impl Map {
+    fn from_lines<'a, I, S>(lines: I) -> anyhow::Result<Self>
+    where
+        I: IntoIterator<Item = &'a S>,
+        S: AsRef<str> + 'a,
+    {
+        let mut map = Map::default();
+
+        for line in lines.into_iter().map(|l| l.as_ref()) {
+            let mut row = Vec::new();
+            for c in line.chars() {
+                row.push(Tile::from_char(c)?);
+            }
+
+            map.inner.push(row);
+        }
+        Ok(map)
+    }
 }
 
 impl fmt::Debug for Map {
@@ -102,31 +122,27 @@ fn solve(map: &Map) -> u32 {
     transposed.inner.iter().map(solve_line).sum()
 }
 
+fn solve_part2(map: &Map) -> u32 {
+    let transposed = transpose_map(map);
+    transposed.inner.iter().map(solve_line).sum()
+}
+
 pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    let mut map = Map::default();
-
-    for line in lines.into_iter().map(|l| l.as_ref()) {
-        let mut row = Vec::new();
-        for c in line.chars() {
-            row.push(Tile::from_char(c)?);
-        }
-
-        map.inner.push(row);
-    }
-
+    let map = Map::from_lines(lines)?;
     Ok(solve(&map))
 }
 
-pub fn part2<'a, I, S>(_lines: I) -> anyhow::Result<u32>
+pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let map = Map::from_lines(lines)?;
+    Ok(solve_part2(&map))
 }
 
 #[cfg(test)]
@@ -157,6 +173,6 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 64);
     }
 }
