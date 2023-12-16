@@ -34,4 +34,6 @@ test day 13 part 2 ... bench:      119494 ns/iter (+/- 2240)
 
 test day 15 part 1 ... bench:       59017 ns/iter (+/- 1668)
 test day 15 part 2 ... bench:      251833 ns/iter (+/- 3421)
+test day 16 part 1 ... bench:      959054 ns/iter (+/- 7407)
+test day 16 part 2 ... bench:   266444428 ns/iter (+/- 737134)
 ```
