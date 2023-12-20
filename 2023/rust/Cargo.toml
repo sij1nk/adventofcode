@@ -18,6 +18,7 @@ build_const = "0.2.1"
 regex = "1"
 ascii = "1.1.0"
 anyhow = "1.0.75"
+colored = "2.1.0"
 
 [build-dependencies]
 build_const = "0.2.1"
