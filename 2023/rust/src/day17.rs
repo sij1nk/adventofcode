@@ -1,11 +1,4 @@
-use colored::Colorize;
-use std::{
-    cmp::Ordering,
-    collections::{BinaryHeap, HashSet},
-    fmt::Debug,
-    iter::{Skip, Take},
-    slice::Iter,
-};
+use std::collections::{BinaryHeap, HashSet};
 
 use anyhow::anyhow;
 
@@ -61,7 +54,7 @@ impl Position {
 }
 
 struct Map {
-    data: Vec<u8>,
+    data: Vec<u32>,
     width: usize,
     height: usize,
 }
@@ -78,7 +71,7 @@ impl Map {
         let first_line = lines.next().ok_or(anyhow!("Input should not be empty"))?;
         let width = first_line.len();
 
-        let to_chars = |l: &'a str| l.chars().filter_map(|c| c.to_digit(10).map(|d| d as u8));
+        let to_chars = |l: &'a str| l.chars().filter_map(|c| c.to_digit(10).map(|d| d as u32));
 
         data.extend(to_chars(first_line));
 
@@ -95,7 +88,7 @@ impl Map {
         })
     }
 
-    fn at(&self, pos: Position) -> Option<u8> {
+    fn at(&self, pos: Position) -> Option<u32> {
         if pos.x >= self.width || pos.y >= self.height {
             None
         } else {
@@ -103,46 +96,14 @@ impl Map {
             self.data.get(i).copied()
         }
     }
-
-    fn rows_iter(&self) -> MapRowsIter {
-        MapRowsIter {
-            data: &self.data,
-            width: self.width,
-            start: 0,
-        }
-    }
-}
-
-struct MapRowsIter<'a> {
-    data: &'a [u8],
-    width: usize,
-    start: usize,
-}
-
-impl<'a> Iterator for MapRowsIter<'a> {
-    type Item = Take<Skip<Iter<'a, u8>>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start >= self.data.len() / self.width {
-            return None;
-        }
-        let iter = self
-            .data
-            .iter()
-            .skip(self.start * self.width)
-            .take(self.width);
-        self.start += 1;
-        Some(iter)
-    }
 }
 
 fn heuristic(map: &Map, pos: Position) -> usize {
     pos.distance(Position::new(map.width - 1, map.height - 1))
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct SearchNode {
-    from: Option<Box<SearchNode>>,
     pos: Position,
     g: usize,
     h: usize,
@@ -150,29 +111,9 @@ struct SearchNode {
     straightness: usize,
 }
 
-impl Debug for SearchNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SearchNode")
-            .field("pos", &self.pos)
-            .field("g", &self.g)
-            .field("h", &self.h)
-            .field("facing", &self.facing)
-            .field("straightness", &self.straightness)
-            .finish()
-    }
-}
-
 impl SearchNode {
-    fn new(
-        map: &Map,
-        from: Option<Box<SearchNode>>,
-        pos: Position,
-        g: usize,
-        facing: Direction,
-        straightness: usize,
-    ) -> Self {
+    fn new(map: &Map, pos: Position, g: usize, facing: Direction, straightness: usize) -> Self {
         Self {
-            from,
             pos,
             g,
             h: heuristic(map, pos),
@@ -206,45 +147,25 @@ impl Ord for SearchNode {
     }
 }
 
-fn print_final_path(map: &Map, node: &SearchNode) {
-    let mut touched_positions = HashSet::new();
-
-    touched_positions.insert(node.pos);
-    let mut node = Box::new(node.clone());
-    while let Some(ref previous) = node.from {
-        println!("Prev: {:?}", previous.pos);
-        touched_positions.insert(previous.pos);
-        node = previous.clone();
-    }
-
-    for (y, row) in map.rows_iter().enumerate() {
-        for (x, n) in row.enumerate() {
-            let pos = Position::new(x, y);
-            if touched_positions.contains(&pos) {
-                print!("{}", n.to_string().white().on_red());
-            } else {
-                print!("{n}");
-            }
-        }
-        println!();
-    }
-}
-
-fn solve(map: &Map, start: Position) -> anyhow::Result<usize> {
-    let goal = Position::new(map.width - 1, map.height - 1);
+fn solve_astar(
+    map: &Map,
+    start: Position,
+    goal: Position,
+    exit_condition: impl Fn(&SearchNode, &Position) -> bool,
+    custom_constraint: impl Fn(&SearchNode, &Direction) -> bool,
+) -> anyhow::Result<usize> {
     let mut touched_positions: HashSet<(Position, Direction, usize)> = HashSet::new();
 
     let mut heap: BinaryHeap<SearchNode> = BinaryHeap::new();
-    heap.push(SearchNode::new(map, None, start, 0, Direction::Right, 0));
+    heap.push(SearchNode::new(map, start, 0, Direction::Right, 0));
     touched_positions.insert((start, Direction::Right, 0));
 
     loop {
         let Some(node) = heap.pop() else {
-            return Err(anyhow!("A* ran out of search nodes"));
+            return Err(anyhow!("Pathfinding ran out of search nodes"));
         };
 
-        if node.pos == goal {
-            print_final_path(map, &node);
+        if exit_condition(&node, &goal) {
             return Ok(node.g);
         }
 
@@ -263,12 +184,11 @@ fn solve(map: &Map, start: Position) -> anyhow::Result<usize> {
                 // neighbor would be out of bounds (lower)
                 continue;
             };
-            if touched_positions.contains(&(neighbor_position, *dir, node.straightness)) {
+            if touched_positions.contains(&(neighbor_position, *dir, new_straightness)) {
                 // we've been here before
                 continue;
             }
-            if same_direction && node.straightness >= 3 {
-                // can't go straight for mode than 3 tiles
+            if custom_constraint(&node, dir) {
                 continue;
             }
             let Some(position_cost) = map.at(neighbor_position) else {
@@ -278,71 +198,6 @@ fn solve(map: &Map, start: Position) -> anyhow::Result<usize> {
             touched_positions.insert((neighbor_position, *dir, new_straightness));
             let new_node = SearchNode::new(
                 map,
-                Some(Box::new(node.clone())),
-                neighbor_position,
-                node.g + position_cost as usize,
-                *dir,
-                new_straightness,
-            );
-            heap.push(new_node);
-        }
-    }
-}
-
-fn solve_part2(map: &Map, start: Position) -> anyhow::Result<usize> {
-    let goal = Position::new(map.width - 1, map.height - 1);
-    let mut touched_positions: HashSet<(Position, Direction, usize)> = HashSet::new();
-
-    let mut heap: BinaryHeap<SearchNode> = BinaryHeap::new();
-    heap.push(SearchNode::new(map, None, start, 0, Direction::Right, 0));
-    touched_positions.insert((start, Direction::Right, 0));
-
-    loop {
-        let Some(node) = heap.pop() else {
-            return Err(anyhow!("A* ran out of search nodes"));
-        };
-        // println!("Checking {:?}", node.pos);
-
-        if node.pos == goal {
-            print_final_path(map, &node);
-            return Ok(node.g);
-        }
-
-        for dir in DIRECTION_PRIORITY {
-            if node.facing.opposite() == *dir {
-                // can't turn 180 degrees
-                continue;
-            }
-            let same_direction = *dir == node.facing;
-            let new_straightness = if same_direction {
-                node.straightness + 1
-            } else {
-                1
-            };
-            let Some(neighbor_position) = node.pos.towards(*dir) else {
-                // neighbor would be out of bounds (lower)
-                continue;
-            };
-            if touched_positions.contains(&(neighbor_position, *dir, node.straightness)) {
-                // we've been here before
-                continue;
-            }
-            if !same_direction && node.straightness < 4 {
-                continue;
-            }
-            // must go straight for at least 4 tiles
-            if same_direction && node.straightness >= 10 {
-                // can't go straight for mode than 10 tiles
-                continue;
-            }
-            let Some(position_cost) = map.at(neighbor_position) else {
-                // neighbor would be out of bounds (upper)
-                continue;
-            };
-            touched_positions.insert((neighbor_position, *dir, new_straightness));
-            let new_node = SearchNode::new(
-                map,
-                Some(Box::new(node.clone())),
                 neighbor_position,
                 node.g + position_cost as usize,
                 *dir,
@@ -359,7 +214,12 @@ where
     S: AsRef<str> + 'a,
 {
     let map = Map::parse(lines)?;
-    solve(&map, Position::new(0, 0))
+    let start = Position::new(0, 0);
+    let goal = Position::new(map.width - 1, map.height - 1);
+    let exit_condition = |node: &SearchNode, goal: &Position| node.pos == *goal;
+    let custom_constraint =
+        |node: &SearchNode, facing: &Direction| node.facing == *facing && node.straightness >= 3;
+    solve_astar(&map, start, goal, exit_condition, custom_constraint)
 }
 
 pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<usize>
@@ -368,7 +228,15 @@ where
     S: AsRef<str> + 'a,
 {
     let map = Map::parse(lines)?;
-    solve_part2(&map, Position::new(0, 0))
+    let start = Position::new(0, 0);
+    let goal = Position::new(map.width - 1, map.height - 1);
+    let exit_condition =
+        |node: &SearchNode, goal: &Position| node.pos == *goal && node.straightness >= 4;
+    let custom_constraint = |node: &SearchNode, facing: &Direction| {
+        node.facing == *facing && node.straightness >= 10
+            || node.facing != *facing && node.straightness < 4
+    };
+    solve_astar(&map, start, goal, exit_condition, custom_constraint)
 }
 
 #[cfg(test)]
@@ -399,6 +267,14 @@ mod tests {
         "999999999991",
     ];
 
+    static EXAMPLE_3: &[&str] = &[
+        "199999999999",
+        "199999999999",
+        "199999999999",
+        "199999999999",
+        "111111111111",
+    ];
+
     #[test]
     fn part1_test() {
         let result = part1(EXAMPLE).unwrap();
@@ -410,8 +286,17 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
         assert_eq!(result, 94);
+    }
 
-        let result2 = part2(EXAMPLE_2).unwrap();
-        assert_eq!(result2, 71);
+    #[test]
+    fn part2_test_unfortunate_path() {
+        let result = part2(EXAMPLE_2).unwrap();
+        assert_eq!(result, 71);
+    }
+
+    #[test]
+    fn part2_test_unfortunate_path2() {
+        let result = part2(EXAMPLE_3).unwrap();
+        assert_eq!(result, 71);
     }
 }
