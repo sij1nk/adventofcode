@@ -8,6 +8,14 @@ enum Tile {
     Empty,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum TiltDirection {
+    North,
+    West,
+    South,
+    East,
+}
+
 impl Tile {
     fn from_char(c: char) -> anyhow::Result<Self> {
         match c {
