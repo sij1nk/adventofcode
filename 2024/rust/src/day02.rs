@@ -67,7 +67,7 @@ where
                 let report_with_skip = report
                     .iter()
                     .enumerate()
-                    .filter(|&(i, n)| i != skip_index)
+                    .filter(|&(i, _n)| i != skip_index)
                     .map(|(_i, n)| *n)
                     .collect::<Vec<_>>();
                 let result = is_report_safe(&report_with_skip);
