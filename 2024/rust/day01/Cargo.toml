@@ -1,0 +1,23 @@
+[package]
+name = "day01"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "day01"
+path = "src/lib.rs"
+
+[[bin]]
+name = "day01"
+path = "src/main.rs"
+
+[dependencies]
+common = { path = "../common" }
+anyhow.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "criterion"
+harness = false

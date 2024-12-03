@@ -1,0 +1,10 @@
+run DAY *ARGS:
+  cargo run {{ARGS}} -p day{{DAY}}
+build DAY *ARGS:
+  cargo build {{ARGS}} -p day{{DAY}}
+test DAY *ARGS:
+  cargo test {{ARGS}} -p day{{DAY}}
+bench DAY *ARGS:
+  cargo bench {{ARGS}} -p day{{DAY}}
+bench-for-readme DAY:
+  cargo bench -p day{{DAY}} --bench criterion -- --output-format=bencher -n
