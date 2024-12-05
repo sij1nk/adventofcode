@@ -1,10 +1,16 @@
+default:
+  just --list
+
+@day DAY:
+  printf "day%02d" {{DAY}}
+
 run DAY *ARGS:
-  cargo run {{ARGS}} -p day{{DAY}}
+  cargo run {{ARGS}} -p $(just day {{DAY}})
 build DAY *ARGS:
-  cargo build {{ARGS}} -p day{{DAY}}
+  cargo build {{ARGS}} -p $(just day {{DAY}})
 test DAY *ARGS:
-  cargo test {{ARGS}} -p day{{DAY}}
+  cargo test {{ARGS}} -p $(just day {{DAY}})
 bench DAY *ARGS:
-  cargo bench {{ARGS}} -p day{{DAY}}
+  cargo bench {{ARGS}} -p $(just day {{DAY}})
 bench-for-readme DAY:
-  cargo bench -p day{{DAY}} --bench criterion -- --output-format=bencher -n
+  cargo bench -p $(just day {{DAY}}) --bench criterion -- --output-format=bencher -n
