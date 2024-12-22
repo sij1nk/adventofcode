@@ -13,6 +13,6 @@ test DAY *ARGS:
 bench DAY *ARGS:
   cargo bench {{ARGS}} -p $(just day {{DAY}})
 bench-for-readme DAY:
-  cargo bench -p $(just day {{DAY}}) --bench criterion -- --output-format=bencher -n
+  cargo bench -p $(just day {{DAY}}) --bench criterion -- --output-format=bencher -n | tr -s "\n"
 init DAY:
   ./init-day.sh {{DAY}}
