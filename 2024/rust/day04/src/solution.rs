@@ -1,5 +1,7 @@
+type Delta = (i32, i32);
+
 // (x, y), starting from north, clockwise
-const DIRECTION_DELTAS: &[(i32, i32)] = &[
+const DIRECTION_DELTAS: &[Delta] = &[
     (0, -1),
     (1, -1),
     (1, 0),
@@ -88,12 +90,67 @@ where
     Ok(count)
 }
 
+const DIAGONAL_DELTA_OPPOSITES: &[(Delta, Delta)] = &[((1, -1), (-1, 1)), ((1, 1), (-1, -1))];
+
+fn spells_cross_mas(grid: &[Vec<char>], a_y: i32, a_x: i32) -> bool {
+    let mut diagonal_correctness_iter =
+        DIAGONAL_DELTA_OPPOSITES
+            .iter()
+            .map(|&((xd1, yd1), (xd2, yd2))| {
+                let x1 = (a_x + xd1) as usize;
+                let y1 = (a_y + yd1) as usize;
+                let x2 = (a_x + xd2) as usize;
+                let y2 = (a_y + yd2) as usize;
+
+                let l1 = grid[y1][x1];
+                let l2 = grid[y2][x2];
+
+                (l1 == 'M' && l2 == 'S') || (l1 == 'S' && l2 == 'M')
+            });
+
+    // We know there's exactly 2, so unwrap is safe
+    let d1 = diagonal_correctness_iter.next().unwrap();
+    let d2 = diagonal_correctness_iter.next().unwrap();
+
+    d1 && d2
+}
+
 pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let (grid, grid_height, grid_width) = build_grid(lines);
+
+    let mut count = 0;
+
+    // Skipping first and last chars of rows/columns, so we don't have to check bounds later
+    for (y, row) in grid
+        .iter()
+        .enumerate()
+        .skip(1)
+        .take((grid_height - 2) as usize)
+    {
+        for (x, &letter) in row
+            .iter()
+            .enumerate()
+            .skip(1)
+            .take((grid_width - 2) as usize)
+        {
+            let y = y as i32;
+            let x = x as i32;
+
+            if letter != 'A' {
+                continue;
+            }
+
+            if spells_cross_mas(grid.as_slice(), y, x) {
+                count += 1;
+            }
+        }
+    }
+
+    Ok(count)
 }
 
 #[cfg(test)]
@@ -124,6 +181,6 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 9);
     }
 }
