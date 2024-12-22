@@ -23,7 +23,7 @@ api_key=$(cat .api-key)
 
 cp -r .template "$id"
 cd "$id" || exit 1
-fdfind -t f -x sed -i "s/%DAY%/$id/g;s/%DAY_NICE%/Day $day_padded/g"
+fdfind -t f -x sed -i "s/%DAY%/$id/g;s/%DAY_NICE%/Day $day_padded/g;s/%DAY_NICE_BENCH%/day $day/g"
 
 wget "https://adventofcode.com/2024/day/${day}/input" \
   --header="Cookie: session=$api_key" \

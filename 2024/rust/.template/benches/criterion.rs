@@ -7,8 +7,8 @@ use %DAY%::{
 fn bench(c: &mut Criterion) {
     let input = read_input().unwrap();
 
-    c.bench_function("part 1", |b| b.iter(|| part1(black_box(&input))));
-    c.bench_function("part 2", |b| b.iter(|| part2(black_box(&input))));
+    c.bench_function("%DAY_NICE_BENCH% part 1", |b| b.iter(|| part1(black_box(&input))));
+    c.bench_function("%DAY_NICE_BENCH% part 2", |b| b.iter(|| part2(black_box(&input))));
 }
 
 criterion_group!(%DAY%, bench);
