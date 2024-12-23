@@ -9,7 +9,7 @@ run DAY *ARGS:
 build DAY *ARGS:
   cargo build {{ARGS}} -p $(just day {{DAY}})
 test DAY *ARGS:
-  cargo test {{ARGS}} -p $(just day {{DAY}})
+  cargo test -p $(just day {{DAY}}) {{ARGS}}
 bench DAY *ARGS:
   cargo bench {{ARGS}} -p $(just day {{DAY}})
 bench-for-readme DAY:
