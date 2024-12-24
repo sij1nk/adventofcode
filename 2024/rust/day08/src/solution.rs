@@ -112,7 +112,46 @@ where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let map = parse(lines);
+
+    let mut antinode_positions = BTreeSet::<V2>::new();
+
+    antinode_positions.extend(map.antennas.values().flatten());
+
+    for ants in map.antennas.values() {
+        for combo in ants.iter().combinations(2) {
+            let a1 = combo[0];
+            let a2 = combo[1];
+
+            let diff = a1.sub(a2);
+
+            let mut current = *a1;
+            loop {
+                let p = current.add(&diff);
+
+                if !p.is_in_bounds(map.width, map.height) {
+                    break;
+                }
+
+                antinode_positions.insert(p);
+                current = p;
+            }
+
+            current = *a2;
+            loop {
+                let p = current.sub(&diff);
+
+                if !p.is_in_bounds(map.width, map.height) {
+                    break;
+                }
+
+                antinode_positions.insert(p);
+                current = p;
+            }
+        }
+    }
+
+    Ok(antinode_positions.len() as u32)
 }
 
 #[cfg(test)]
