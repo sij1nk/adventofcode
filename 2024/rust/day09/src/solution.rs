@@ -1,3 +1,5 @@
+use std::collections::{BTreeMap, BTreeSet};
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Node {
     Space,
@@ -79,21 +81,21 @@ fn find_next_space(disk: &Disk, index: usize) -> usize {
 
 struct SpaceBlockIterator<'a> {
     nodes: &'a Vec<Node>,
-    current: Option<(usize, usize)>,
+    current: Option<BlockPointer>,
 }
 
 impl<'a> Iterator for SpaceBlockIterator<'a> {
-    type Item = (usize, usize);
+    type Item = BlockPointer;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (_, c2) = self.current.unwrap_or_default();
+        let current = self.current.unwrap_or_default();
 
         let zip = self
             .nodes
             .iter()
             .zip(self.nodes.iter().skip(1))
             .enumerate()
-            .skip(c2);
+            .skip(current.end);
 
         for (i, (n1, n2)) in zip {
             if !(matches!(n1, Node::File(_)) && *n2 == Node::Space) {
@@ -112,7 +114,7 @@ impl<'a> Iterator for SpaceBlockIterator<'a> {
                 }
             }
 
-            self.current = Some((c1, c2));
+            self.current = Some(BlockPointer { start: c1, end: c2 });
             return self.current;
         }
 
@@ -122,17 +124,25 @@ impl<'a> Iterator for SpaceBlockIterator<'a> {
 
 struct FileBlockIterator<'a> {
     nodes: &'a Vec<Node>,
-    current: Option<(usize, usize)>,
+    current: Option<BlockPointer>,
 }
 
 impl<'a> Iterator for FileBlockIterator<'a> {
-    type Item = (usize, usize);
+    type Item = BlockPointer;
 
     fn next(&mut self) -> Option<Self::Item> {
         let len = self.nodes.len();
-        let (mut c1, _) = self.current.unwrap_or((len, len));
+        let mut current = self.current.unwrap_or(BlockPointer {
+            start: len,
+            end: len,
+        });
 
-        let rev = self.nodes.iter().rev().enumerate().skip(len - c1);
+        let rev = self
+            .nodes
+            .iter()
+            .rev()
+            .enumerate()
+            .skip(len - current.start);
 
         let mut current_id: Option<u64> = None;
 
@@ -140,7 +150,10 @@ impl<'a> Iterator for FileBlockIterator<'a> {
             let Node::File(id) = n else {
                 match current_id {
                     Some(_) => {
-                        self.current = Some((len - i, len - c1));
+                        self.current = Some(BlockPointer {
+                            start: len - i,
+                            end: len - current.start,
+                        });
                         return self.current;
                     }
                     None => continue,
@@ -150,11 +163,14 @@ impl<'a> Iterator for FileBlockIterator<'a> {
             match current_id {
                 Some(c_id) if c_id == *id => continue,
                 Some(_) => {
-                    self.current = Some((len - i, len - c1));
+                    self.current = Some(BlockPointer {
+                        start: len - i,
+                        end: len - current.start,
+                    });
                     return self.current;
                 }
                 None => {
-                    c1 = i;
+                    current.start = i;
                     current_id = Some(*id);
                 }
             }
@@ -205,37 +221,117 @@ where
         .fold(0, |acc, (i, id)| acc + (i as u64) * id))
 }
 
+type BlockSize = usize;
+type SpaceBlocksMap = BTreeMap<BlockSize, BTreeSet<BlockPointer>>;
+
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+struct BlockPointer {
+    start: usize,
+    end: usize,
+}
+
+impl BlockPointer {
+    fn size(&self) -> usize {
+        self.end - self.start
+    }
+}
+
+impl Ord for BlockPointer {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.start.cmp(&other.start)
+    }
+}
+
+impl PartialOrd for BlockPointer {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn build_space_blocks_map(disk: &Disk) -> SpaceBlocksMap {
+    let mut map: SpaceBlocksMap = BTreeMap::new();
+
+    for block in disk.space_block_iter() {
+        map.entry(block.size()).or_default().insert(block);
+    }
+
+    map
+}
+
+fn get_first_viable_space_block(
+    space_blocks_map: &SpaceBlocksMap,
+    file_block: &BlockPointer,
+) -> Option<BlockPointer> {
+    let mut viable_space_blocks = space_blocks_map
+        .iter()
+        .filter(|&(size, _)| *size >= file_block.size())
+        .filter_map(|(size, map)| {
+            let space_block = map.first()?;
+
+            Some((size, space_block))
+        })
+        .map(|(_, block)| block)
+        .collect::<Vec<_>>();
+
+    if viable_space_blocks.is_empty() {
+        return None;
+    }
+
+    viable_space_blocks.sort();
+
+    let space_block = viable_space_blocks[0];
+
+    if space_block.start > file_block.start {
+        None
+    } else {
+        Some(*space_block)
+    }
+}
+
 pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<u64>
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
     let mut disk = parse(lines);
-    let spare_disk = disk.clone(); // not sure if needed
+    let cloned_disk = disk.clone();
 
-    let mut skip_file = 0;
+    let mut space_blocks_map = build_space_blocks_map(&disk);
 
-    loop {
-        let Some(file_block) = spare_disk.file_block_iter().nth(skip_file) else {
-            break;
-        };
-
-        skip_file += 1;
-
-        let file_len = file_block.1 - file_block.0;
-
-        let Some(space_block) = disk.space_block_iter().find(|b| {
-            let len = b.1 - b.0;
-            len >= file_len && b.0 < file_block.0
-        }) else {
+    for file_block in cloned_disk.file_block_iter() {
+        let Some(space_block) = get_first_viable_space_block(&space_blocks_map, &file_block) else {
             continue;
         };
 
-        for i in (space_block.0..space_block.1).take(file_len) {
-            disk.inner[i] = disk.inner[file_block.0];
+        let Node::File(file_id) = disk.inner[file_block.start] else {
+            panic!(
+                "Expected file block, found space block at {}",
+                file_block.start
+            );
+        };
+
+        space_blocks_map
+            .get_mut(&space_block.size())
+            .unwrap()
+            .remove(&space_block);
+
+        let remaining_space = space_block.size() - file_block.size();
+
+        if remaining_space != 0 {
+            space_blocks_map
+                .entry(remaining_space)
+                .or_default()
+                .insert(BlockPointer {
+                    start: space_block.end - remaining_space,
+                    end: space_block.end,
+                });
+        };
+
+        for i in (space_block.start..space_block.end).take(file_block.size()) {
+            disk.inner[i] = Node::File(file_id);
         }
 
-        for i in file_block.0..file_block.1 {
+        for i in file_block.start..file_block.end {
             disk.inner[i] = Node::Space;
         }
     }
