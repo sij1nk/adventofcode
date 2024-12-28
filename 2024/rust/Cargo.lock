@@ -276,6 +276,7 @@ dependencies = [
  "anyhow",
  "common",
  "criterion",
+ "itertools 0.13.0",
 ]
 
 [[package]]
