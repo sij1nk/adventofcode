@@ -106,6 +106,31 @@ fn calculate_trailhead_score(map: &Map, trailhead: &V2) -> u32 {
     peaks.len() as u32
 }
 
+fn calculate_trailhead_rating(map: &Map, trailhead: &V2) -> u32 {
+    let mut neighbors = VecDeque::from([*trailhead]);
+    let mut peaks: Vec<V2> = Vec::new();
+
+    while let Some(pos) = neighbors.pop_back() {
+        let current = map.get(&pos);
+
+        if current == 9 {
+            peaks.push(pos);
+        }
+
+        let valid_neighbors = get_neighbors(&pos, map.width, map.height)
+            .iter()
+            .filter(|&neighbor| map.get(neighbor) == current + 1)
+            .copied()
+            .collect::<Vec<_>>();
+
+        for valid_n in valid_neighbors {
+            neighbors.push_front(valid_n);
+        }
+    }
+
+    peaks.len() as u32
+}
+
 pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
@@ -125,7 +150,13 @@ where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
-    todo!()
+    let map = parse(lines);
+
+    Ok(map
+        .trailheads
+        .iter()
+        .map(|th| calculate_trailhead_rating(&map, th))
+        .sum())
 }
 
 #[cfg(test)]
@@ -148,6 +179,6 @@ mod tests {
     fn part2_test() {
         let result = part2(EXAMPLE).unwrap();
 
-        assert_eq!(result, 0);
+        assert_eq!(result, 81);
     }
 }
