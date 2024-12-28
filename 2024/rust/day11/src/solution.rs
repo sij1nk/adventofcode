@@ -1,4 +1,8 @@
+use std::collections::{BTreeMap, VecDeque};
+
 type Int = u64;
+type Blinks = usize;
+type Cache = BTreeMap<Int, BTreeMap<Blinks, Vec<Int>>>;
 
 fn get_digits_count(n: Int) -> Int {
     n.ilog10() as Int + 1
@@ -22,44 +26,84 @@ fn blink(n: Int) -> Vec<Int> {
 
     vec![n * 2024]
 }
+fn populate_cache(blink_count: Blinks) -> Cache {
+    let mut cache = BTreeMap::new();
 
-pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<Int>
-where
-    I: IntoIterator<Item = &'a S>,
-    S: AsRef<str> + 'a,
-{
-    let mut stones = lines
-        .into_iter()
-        .map(|s| s.as_ref().split(' ').map(|w| w.parse::<Int>().unwrap()))
-        .next()
-        .unwrap()
-        .collect::<Vec<_>>();
+    for n in 0..10 {
+        let n_cache: &mut BTreeMap<Blinks, Vec<Int>> = cache.entry(n).or_default();
 
-    for _ in 0..25 {
-        stones = stones.into_iter().flat_map(blink).collect::<Vec<_>>();
+        let mut stones = vec![n];
+        for i in 0..blink_count {
+            let blinks = i + 1;
+            stones = stones.into_iter().flat_map(blink).collect::<Vec<_>>();
+            n_cache.insert(blinks, stones.clone());
+        }
     }
 
-    Ok(stones.len() as Int)
+    cache
 }
 
-pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<Int>
+fn solve<'a, I, S>(lines: I, blink_count: Blinks) -> usize
 where
     I: IntoIterator<Item = &'a S>,
     S: AsRef<str> + 'a,
 {
+    let mut count = 0;
+    let mut cache: Cache = populate_cache(15);
+
     let mut stones = lines
         .into_iter()
-        .map(|s| s.as_ref().split(' ').map(|w| w.parse::<Int>().unwrap()))
+        .map(|s| {
+            s.as_ref()
+                .split(' ')
+                .map(|w| w.parse::<Int>().unwrap())
+                .map(|n| (blink_count as Blinks, n))
+        })
         .next()
         .unwrap()
-        .collect::<Vec<_>>();
+        .collect::<VecDeque<_>>();
 
-    for _ in 0..75 {
-        let new_stones = stones.into_iter().flat_map(blink).collect::<Vec<_>>();
-        stones = new_stones;
+    while let Some((rem_blinks, n)) = stones.pop_back() {
+        let n_cache = cache.entry(n).or_default();
+        let cache_result = n_cache
+            .iter()
+            .filter(|&(&k, _)| k <= rem_blinks)
+            .next_back();
+
+        let (rem_blinks_after, blink_result) = match cache_result {
+            Some((best_key, blink_result)) => (rem_blinks - best_key, blink_result.clone()),
+            None => {
+                let blink_result = blink(n);
+                (rem_blinks - 1, blink_result)
+            }
+        };
+
+        if rem_blinks_after == 0 {
+            count += blink_result.len();
+        } else {
+            for n in blink_result {
+                stones.push_front((rem_blinks_after, n));
+            }
+        }
     }
 
-    Ok(stones.len() as Int)
+    count
+}
+
+pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<usize>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    Ok(solve(lines, 25))
+}
+
+pub fn part2<'a, I, S>(lines: I) -> anyhow::Result<usize>
+where
+    I: IntoIterator<Item = &'a S>,
+    S: AsRef<str> + 'a,
+{
+    Ok(solve(lines, 25))
 }
 
 #[cfg(test)]
