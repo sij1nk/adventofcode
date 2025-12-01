@@ -1,0 +1,9 @@
+[workspace]
+members = ['common', 'day01']
+
+[workspace.dependencies]
+anyhow = '1.0.75'
+ascii = '1.1.0'
+criterion = '0.8'
+itertools = '0.14.0'
+regex = '1'

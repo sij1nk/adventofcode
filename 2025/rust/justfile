@@ -1,0 +1,18 @@
+default:
+  just --list
+
+@day DAY:
+  printf "day%02d" {{DAY}}
+
+run DAY *ARGS:
+  cargo run {{ARGS}} -p $(just day {{DAY}})
+build DAY *ARGS:
+  cargo build {{ARGS}} -p $(just day {{DAY}})
+test DAY *ARGS:
+  cargo test -p $(just day {{DAY}}) {{ARGS}}
+bench DAY *ARGS:
+  cargo bench {{ARGS}} -p $(just day {{DAY}})
+bench-for-readme DAY:
+  cargo bench -p $(just day {{DAY}}) --bench criterion -- --output-format=bencher -n | tr -s "\n"
+init DAY:
+  ./init-day.sh {{DAY}}
