@@ -1,8 +1,9 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use day01::{
     read_input,
     solution::{part1, part2},
 };
+use std::hint::black_box;
 
 fn bench(c: &mut Criterion) {
     let input = read_input().unwrap();
