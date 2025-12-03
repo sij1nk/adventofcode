@@ -1,5 +1,3 @@
-use std::cmp;
-
 pub fn part1<'a, I, S>(lines: I) -> anyhow::Result<u32>
 where
     I: IntoIterator<Item = &'a S>,
