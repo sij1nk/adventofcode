@@ -15,4 +15,6 @@ test day 5 part 1 ... bench:     106,507 ns/iter (+/- 531)
 test day 5 part 2 ... bench:      11,149 ns/iter (+/- 230)
 test day 6 part 1 ... bench:     108,257 ns/iter (+/- 1,510)
 test day 6 part 2 ... bench:     270,489 ns/iter (+/- 3,121
+test day 7 part 1 ... bench:     101,973 ns/iter (+/- 301)
+test day 7 part 2 ... bench:     111,426 ns/iter (+/- 719)
 ```
