@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{cell::RefCell, collections::BTreeMap};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct V3 {
@@ -13,8 +13,7 @@ impl V3 {
         let yd = self.y.abs_diff(other.y);
         let zd = self.z.abs_diff(other.z);
 
-        let d1 = ((xd * xd + yd * yd) as f64).sqrt();
-        let d = (d1 * d1 + (zd * zd) as f64).sqrt();
+        let d = ((xd * xd + yd * yd + zd * zd) as f64).sqrt();
 
         // Hack to turn float into something that can be used as a key in a map
         (d * 1000000f64).floor() as u64
@@ -39,6 +38,9 @@ where
 
     let mut ds: BTreeMap<u64, Vec<(&V3, &V3)>> = BTreeMap::new();
 
+    // TODO:
+    // This is VERY expensive (0.17s) but I can't come up with anything better...
+    // Can I discover the shortest path without having to walk all paths?
     for (i, p) in points.iter().enumerate() {
         for pp in points.iter().skip(i + 1) {
             let d = p.dist(pp);
@@ -46,7 +48,8 @@ where
         }
     }
 
-    let mut graphs: Vec<Vec<&V3>> = vec![];
+    // This barely makes a difference in the bench as opposed to Vec<Vec<&V3>>
+    let mut graphs: Vec<RefCell<Vec<&V3>>> = vec![];
 
     for vs in ds.values() {
         for &(v1, v2) in vs.iter() {
@@ -56,43 +59,35 @@ where
 
             connections -= 1;
 
-            let vec1found = graphs.iter().enumerate().find(|(_, g)| g.contains(&v1));
-            let vec2found = graphs.iter().enumerate().find(|(_, g)| g.contains(&v2));
+            let vec1found = graphs.iter().find(|g| g.borrow().contains(&v1));
+            let vec2found = graphs
+                .iter()
+                .enumerate()
+                .find(|(_, g)| g.borrow().contains(&v2));
 
-            if let Some((v1i, vec1found)) = vec1found {
+            if let Some(vec1found) = vec1found {
                 if let Some((v2i, vec2found)) = vec2found {
                     if vec1found == vec2found {
                         continue;
                     }
 
-                    let mut new_vec = vec1found.clone();
-                    new_vec.extend_from_slice(vec2found);
+                    vec1found
+                        .borrow_mut()
+                        .extend_from_slice(&vec2found.borrow());
 
-                    let (mini, maxi) = if v1i < v2i { (v1i, v2i) } else { (v2i, v1i) };
-                    graphs.swap_remove(maxi);
-                    graphs.swap_remove(mini);
-                    graphs.push(new_vec);
+                    graphs.swap_remove(v2i);
                 } else {
-                    let mut new_vec = vec1found.clone();
-                    new_vec.push(v2);
-
-                    graphs.swap_remove(v1i);
-                    graphs.push(new_vec);
+                    vec1found.borrow_mut().push(v2);
                 }
-            } else if let Some((v2i, vec2found)) = vec2found {
-                let mut new_vec = vec2found.clone();
-                new_vec.push(v1);
-
-                graphs.swap_remove(v2i);
-                graphs.push(new_vec);
+            } else if let Some((_, vec2found)) = vec2found {
+                vec2found.borrow_mut().push(v1);
             } else {
-                let new_vec = vec![v1, v2];
-                graphs.push(new_vec);
+                graphs.push(RefCell::new(vec![v1, v2]));
             }
         }
     }
 
-    let mut gl: Vec<_> = graphs.iter().map(|v| v.len() as u64).collect();
+    let mut gl: Vec<_> = graphs.iter().map(|v| v.borrow().len() as u64).collect();
     gl.sort();
 
     Ok(gl.iter().rev().take(3).product())
