@@ -21,4 +21,5 @@ test day 8 part 1 ... bench: 188,175,452 ns/iter (+/- 4,651,610)
 test day 8 part 2 ... bench: 195,945,053 ns/iter (+/- 9,762,889)
 test day 9 part 1 ... bench:     124,464 ns/iter (+/- 205)
 test day 9 part 2 ... bench: TODO
+test day 10 part 1 ... bench: TODO
 ```
